@@ -1,0 +1,5 @@
+
+Dsquid:S1068".Remove this unused "lastPacket" private field.(µé‹%
+Hsquid:S1068",Remove this unused "listener" private field.(¼û¡óÿÿÿÿÿ
+usquid:S2293"YReplace the type specification in this constructor call with the diamond operator ("<>").(ò—Èÿÿÿÿÿÿ
+]squid:S2142o"FEither re-interrupt this method or rethrow the "InterruptedException".(ä ¹€
