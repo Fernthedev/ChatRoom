@@ -64,7 +64,7 @@ public class ServerThread implements Runnable {
     }
 
 
-    void close(boolean sendObject) {
+    synchronized void close(boolean sendObject) {
         try {
             System.out.println("Closing connection at for player " + clientPlayer);
             running = false;
@@ -78,12 +78,10 @@ public class ServerThread implements Runnable {
                 }
 
                 if ((!channel.isActive())) {
-                    //sendObject(new SafeDisconnect());
+
 
                     System.out.println("Closing sockets.");
 
-                    //readListener.terminate();
-                    //channel.closeFuture();
                     channel.closeFuture().sync();
 
                     socketList.remove(clientPlayer);
@@ -91,23 +89,14 @@ public class ServerThread implements Runnable {
 
                     System.out.println("Closed sockets ");
                 }
-
-
             }
-            //if(!scanner.nextLine().equals(""))
-
-           /* try {
-                throw new LostConnectionServer(clientPlayer.getAdress().toString());
-            } catch (LostConnectionServer lostConnectionServer) {
-                lostConnectionServer.printStackTrace();
-            }*/
 
             isConnected = false;
             running = false;
 
             thread.join();
 
-            //serverSocket.close();
+
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

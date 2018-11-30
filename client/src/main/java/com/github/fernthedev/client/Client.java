@@ -1,7 +1,7 @@
 package com.github.fernthedev.client;
 
-import com.github.fernthedev.universal.NetPlayer;
 import com.github.fernthedev.exceptions.LostConnectionServer;
+import com.github.fernthedev.universal.NetPlayer;
 
 import java.util.Scanner;
 
@@ -15,32 +15,35 @@ public class Client {
      String host;
 
     public String name;
-    public static waitForCommand WaitForCommand;
-    public static Thread waitThread;
+    static waitForCommand WaitForCommand;
+    static Thread waitThread;
 
     static Thread currentThread;
 
     private ClientThread clientThread;
 
 
-    public Client(String host, int port) {
+
+    Client(String host, int port) {
         this.port = port;
         this.host = host;
         this.scanner = Main.scanner;
         name = null;
-         WaitForCommand = new waitForCommand(this);
+        WaitForCommand = new waitForCommand(this);
 
+        clientThread = new ClientThread(this);
 
-         clientThread = new ClientThread(this);
-         currentThread = new Thread(clientThread);
+        currentThread = new Thread(clientThread);
     }
 
-    public void initialize() {
+    void initialize() {
         System.out.println("Initializing");
         name = null;
         clientThread.connected = false;
         clientThread.connectToServer = true;
         clientThread.running = true;
+
+
 
         if(!registered) {
             System.out.println("Type in your desired username:");
@@ -59,10 +62,7 @@ public class Client {
         while(!clientThread.connected && clientThread.connectToServer) {
             clientThread.connect();
 
-
         }
-
-
     }
 
 

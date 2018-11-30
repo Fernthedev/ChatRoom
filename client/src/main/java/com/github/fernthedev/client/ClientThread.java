@@ -1,7 +1,10 @@
 package com.github.fernthedev.client;
 
-import com.github.fernthedev.universal.NetPlayer;
 import com.github.fernthedev.client.netty.ClientHandler;
+import com.github.fernthedev.packets.Packet;
+import com.github.fernthedev.packets.PlayerLeave;
+import com.github.fernthedev.packets.RemovePlayerPacket;
+import com.github.fernthedev.universal.NetPlayer;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -10,7 +13,6 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
-import com.github.fernthedev.packets.*;
 
 public class ClientThread implements Runnable {
     NetPlayer player;
@@ -20,7 +22,7 @@ public class ClientThread implements Runnable {
     }
 
 
-    boolean running = false;
+    boolean running;
 
      boolean connected;
 
@@ -36,6 +38,7 @@ public class ClientThread implements Runnable {
     private Channel channel;
 
     private EventLoopGroup workerGroup;
+
     //private ReadListener readListener;
 
 
@@ -43,6 +46,10 @@ public class ClientThread implements Runnable {
         this.client = client;
         listener = new EventListener(client);
         running = true;
+    }
+
+    public boolean isRunning() {
+        return running;
     }
 
     void connect() {
@@ -68,6 +75,10 @@ public class ClientThread implements Runnable {
 
             future = b.connect(client.host, client.port).sync();
             channel = future.channel();
+
+
+
+
             //future.channel().closeFuture().sync();
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -77,14 +88,6 @@ public class ClientThread implements Runnable {
 
         if (future.isSuccess() && future.channel().isActive()) {
             System.out.println("SOCKET CONNECTED!");
-
-            // System.out.println("Making new thread");
-
-
-            //socket.getOutputStream().flush();
-
-
-            //BufferedReader bis = new BufferedReader(new InputStreamReader(in));
             connected = true;
 
 
@@ -191,6 +194,7 @@ public class ClientThread implements Runnable {
         //client.print(running);
         client.print("Checking for " + client.host + ":" + client.port + " socket " + channel);
         while (running) {
+            if (System.console() == null) close();
             /*
             try {
                 //client.print("checking");

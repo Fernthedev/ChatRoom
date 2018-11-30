@@ -5,11 +5,15 @@ import com.github.fernthedev.packets.PingPacket;
 import com.github.fernthedev.packets.RecieveMessagePacket;
 
 import java.util.Scanner;
-import com.github.fernthedev.packets.*;
 public class ServerBackground implements Runnable {
 
     private Server server;
     private Scanner scanner;
+
+    public Scanner getScanner() {
+        return scanner;
+    }
+
     private boolean checked;
 
     ServerBackground(Server server) {

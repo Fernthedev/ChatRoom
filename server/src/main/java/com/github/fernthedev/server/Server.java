@@ -1,8 +1,8 @@
 package com.github.fernthedev.server;
 
-import com.github.fernthedev.universal.NetPlayer;
 import com.github.fernthedev.packets.Packet;
 import com.github.fernthedev.server.netty.ProcessingHandler;
+import com.github.fernthedev.universal.NetPlayer;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -12,18 +12,23 @@ import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 
-import java.util.*;
+import java.awt.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-public class Server {
+public class Server extends Canvas implements Runnable {
 
     private int port;
-    //private Socket clientSocket;
-    //private ServerSocket serverSocket;
+
+    public static final int WIDTH = 640,HEIGHT =  WIDTH / 12*9;
 
     private boolean running = false;
 
-    // private ObjectOutputStream out;
-   // private ObjectInputStream in;
+    private ServerBackground serverBackground;
 
     public static Map<Channel,ClientPlayer> socketList = new HashMap<>();
 
@@ -35,7 +40,6 @@ public class Server {
 
     static List<Thread> serverInstanceThreads = new ArrayList<>();
 
-
     Object lastPacket;
 
     private ChannelFuture future;
@@ -46,72 +50,16 @@ public class Server {
 
     private ProcessingHandler processingHandler;
 
-    public Server(int port) {
+    Server(int port) {
         this.port = port;
-
     }
 
-    public void startServer() {
-        //serverSocket = new ServerSocket(port);
-        bossGroup = new NioEventLoopGroup();
-       processingHandler = new ProcessingHandler(this);
-         workerGroup = new NioEventLoopGroup();
-
-        bootstrap = new ServerBootstrap();
-
-        bootstrap.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childHandler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    public void initChannel(SocketChannel ch) {
-
-                        ch.pipeline().addLast(new ObjectEncoder(),
-                                new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
-                                processingHandler);
-                    }
-                }).option(ChannelOption.SO_BACKLOG, 128)
-                .childOption(ChannelOption.SO_KEEPALIVE, true).childOption(ChannelOption.TCP_NODELAY,true);
-
-
-                 /*finally {
-                    workerGroup.shutdownGracefully();
-                    bossGroup.shutdownGracefully();
-                }*/
-
-
-        running = true;
-        System.out.println("Server socket registered");
-        new Thread(new ServerBackground(this)).start();
-        //Timer pingPongTimer = new Timer("pingpong");
-        System.out.println("Server started successfully at localhost");
-
-        serverPlayer = new NetPlayer(0,"Server");
-        PlayerHandler.players.put(serverPlayer.id,serverPlayer);
-
-        //connect();
-        try {
-            future = bootstrap.bind(port).sync();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-
-        if (!future.isSuccess()) {
-            System.out.println("Failed to bind port");
-        }else{
-            System.out.println("Binded port on " + future.channel().localAddress());
-        }
-
-        connect();
-    }
 
 
     private void connect() {
 
         while (running) {
             try {
-
-
                 future = future.await().sync();
 
                 future.channel().closeFuture().sync();
@@ -120,36 +68,6 @@ public class Server {
                 if(future.channel().isActive() && future.channel().isRegistered()) {
                     channelServerHashMap.put(future.channel(),this);
                 }
-
-                /*
-
-                future.addListener((ChannelFutureListener) channelFuture -> {
-                    if (channelFuture.isSuccess()) {
-                        channel = channelFuture.channel();
-
-
-                        System.out.println("Connected to channel " + future.channel());
-                        establishClient(future);
-
-                        channelFuture.channel().closeFuture().addListener((ChannelFutureListener) channelFuture1 -> {
-                            future.channel().closeFuture().sync();
-                            channel.closeFuture().sync();
-                        });
-
-                    }
-                });*/
-
-                //future.channel().closeFuture().sync();
-                //future.channel().closeFuture().sync();
-
-
-            /*if (!future.isSuccess()) {
-                System.out.println("Failed to bind port");
-            }*/
-
-                // if (future.channel().isRegistered()) {
-                //         System.out.println("Connected to channel " + future.channel().remoteAddress());
-                //    }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -159,7 +77,7 @@ public class Server {
 
     }
 
-    public static void sendObjectToAllPlayers(Object packet) {
+    public synchronized static void sendObjectToAllPlayers(Object packet) {
         for(Channel channel : socketList.keySet()) {
 
             ClientPlayer clientPlayer = socketList.get(channel);
@@ -176,70 +94,92 @@ public class Server {
     }
 
 
-    /*
-    @Deprecated
-    private void establishClient(ChannelFuture channelFuture) {
-
-        if (channel != null) {
-            connected = true;
-
-            ClientPlayer clientPlayer = new ClientPlayer(channelFuture);
-
-            System.out.println("Created clientPlayer variable " + clientPlayer + " channel " + future.channel());
-
-            socketList.put(channelFuture.channel(),clientPlayer);
-
-
-            listener = new EventListener(this, clientPlayer);
-            //processingHandler.setListener(listener);
-            System.out.println("Events registered");
-
-
-// And From your main() method or any other method
-            FernThread runningFernThread;
-
-
-            ServerThread serverThread = new ServerThread(this, channelFuture, clientPlayer, listener);
-
-            runningFernThread = new FernThread(serverThread);
-            clientPlayer.setThread(runningFernThread);
-
-            runningFernThread.startThread();
-            serverThread.startListener();
-
-            System.out.println("Thread started for player " + clientPlayer);
-
-
-            clientPlayer.sendObject(new RequestNamePacket());
-
-            Runtime.getRuntime().addShutdownHook(new FernThread() {
-                @Override
-                public void run() {
-                    for (ServerThread serverThread : serverThreads) {
-                        if (serverThread.clientPlayer.channel.isOpen()) {
-                            System.out.println("Gracefully shutting down/");
-                            sendObjectToAllPlayers(new LostServerConnectionPacket());
-                            serverThread.clientPlayer.close(false, false);
-                        }
-                    }
-                }
-            });
-        }else{
-            System.out.println("Channel is null");
-            throw new NullPointerException();
-        }
-    }*/
-
-
-    void shutdownServer() {
+    synchronized void shutdownServer() {
+        running = false;
         for (ServerThread thread : serverThreads) {
             thread.close(true);
         }
         workerGroup.shutdownGracefully();
         bossGroup.shutdownGracefully();
+        System.exit(0);
     }
 
-    boolean isRunning() {
+    public boolean isRunning() {
         return running;
+    }
+
+    /**
+     * When an object implementing interface <code>Runnable</code> is used
+     * to create a thread, starting the thread causes the object's
+     * <code>run</code> method to be called in that separately executing
+     * thread.
+     * <p>
+     * The general contract of the method <code>run</code> is that it may
+     * take any action whatsoever.
+     *
+     * @see Thread#run()
+     */
+    @Override
+    public void run() {
+        bossGroup = new NioEventLoopGroup();
+        processingHandler = new ProcessingHandler(this);
+        workerGroup = new NioEventLoopGroup();
+
+        bootstrap = new ServerBootstrap();
+
+        bootstrap.group(bossGroup, workerGroup)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    public void initChannel(SocketChannel ch) {
+
+                        ch.pipeline().addLast(new ObjectEncoder(),
+                                new ObjectDecoder(ClassResolvers.cacheDisabled(null)),
+                                processingHandler);
+                    }
+                }).option(ChannelOption.SO_BACKLOG, 128)
+                .childOption(ChannelOption.SO_KEEPALIVE, true)
+                .childOption(ChannelOption.TCP_NODELAY,true)
+                .childOption(ChannelOption.SO_BROADCAST,true);
+
+
+        running = true;
+        System.out.println("Server socket registered");
+        serverBackground = new ServerBackground(this);
+        new Thread(serverBackground).start();
+        //Timer pingPongTimer = new Timer("pingpong");
+
+
+
+        serverPlayer = new NetPlayer(0,"Server");
+        PlayerHandler.players.put(serverPlayer.id,serverPlayer);
+
+        //connect();
+        try {
+            future = bootstrap.bind(port).sync();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
+        try {
+            System.out.println("Server started successfully at localhost (Connect with " + InetAddress.getLocalHost().getHostAddress() + ") using port " + port);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        }
+
+        if (!future.isSuccess()) {
+            System.out.println("Failed to bind port");
+        }else{
+            System.out.println("Binded port on " + future.channel().localAddress());
+        }
+
+        connect();
+
+
+        while(running) {
+            if (System.console() == null) shutdownServer();
+            //Thread.sleep(15);
+        }
     }
 }

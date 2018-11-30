@@ -1,5 +1,6 @@
 package com.github.fernthedev.server;
 
+import java.io.IOException;
 import java.util.Scanner;
 
 public class Main {
@@ -8,6 +9,19 @@ public class Main {
 
     public static void main(String[] args) {
             scanner = new Scanner(System.in);
+
+        if(System.console() == null) {
+
+            String filename = Main.class.getProtectionDomain().getCodeSource().getLocation().toString().substring(6);
+            System.out.println("No console found");
+            try {
+                Runtime.getRuntime().exec(new String[]{"cmd","/c","start","cmd","/c","java -jar -Xmx2G -Xms2G \"" + filename + "\""});
+                System.exit(0);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
 
             int port = -1;
 
@@ -23,10 +37,10 @@ public class Main {
                 }
             }
 
-            if (port == -1) port = 25560;
+            if (port == -1) port = 2000;
 
             Server server = new Server(port);
-            server.startServer();
+            new Thread(server).start();
     }
 
     public static String readLine(String message) {

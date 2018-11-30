@@ -1,5 +1,6 @@
 package com.github.fernthedev.client;
 
+import java.io.IOException;
 import java.util.Scanner;
 
 public class Main {
@@ -9,6 +10,20 @@ public class Main {
     static Client client;
 
     public static void main(String[] args) {
+
+        if(System.console() == null) {
+
+            String filename = Main.class.getProtectionDomain().getCodeSource().getLocation().toString().substring(6);
+            System.out.println("No console found");
+            try {
+                Runtime.getRuntime().exec(new String[]{"cmd","/c","start","cmd","/c","java -jar -Xmx2G -Xms2G \"" + filename + "\""});
+                System.exit(0);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
         scanner = new Scanner(System.in);
 
         String host = null;
