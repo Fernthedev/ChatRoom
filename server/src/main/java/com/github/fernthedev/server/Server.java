@@ -4,6 +4,7 @@ import com.github.fernthedev.packets.LostServerConnectionPacket;
 import com.github.fernthedev.packets.Packet;
 import com.github.fernthedev.server.netty.ProcessingHandler;
 import com.github.fernthedev.universal.NetPlayer;
+import com.github.fernthedev.universal.StaticHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -12,7 +13,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.awt.*;
@@ -32,7 +32,15 @@ public class Server extends Canvas implements Runnable {
 
     private boolean running = false;
 
+    private static Thread thread;
+
     private ServerBackground serverBackground;
+
+    private Console console;
+
+    public Console getConsole() {
+        return console;
+    }
 
     public static Map<Channel,ClientPlayer> socketList = new HashMap<>();
 
@@ -60,13 +68,10 @@ public class Server extends Canvas implements Runnable {
 
     private ProcessingHandler processingHandler;
 
-    static {
-        Logger.getLogger("io.netty").setLevel(Level.OFF);
-    }
 
     Server(int port) {
         this.port = port;
-        Logger.getLogger("io.netty").setLevel(Level.OFF);
+        console = new Console();
     }
 
 
@@ -142,6 +147,7 @@ public class Server extends Canvas implements Runnable {
      */
     @Override
     public void run() {
+        thread = Thread.currentThread();
         bossGroup = new NioEventLoopGroup();
         processingHandler = new ProcessingHandler(this);
         workerGroup = new NioEventLoopGroup();
@@ -213,8 +219,26 @@ public class Server extends Canvas implements Runnable {
 
 
         while(running) {
-            if (System.console() == null) shutdownServer();
+            if (System.console() == null && !StaticHandler.isDebug) shutdownServer();
             //Thread.sleep(15);
+        }
+    }
+
+    public static synchronized void closeThread(Thread thread) {
+        if(thread == Server.thread) throw new IllegalArgumentException("Cannot be same thread it's joining on");
+
+        Thread thread1 = new Thread(() -> {
+            try {
+                thread.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        });
+
+        try {
+            thread1.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 

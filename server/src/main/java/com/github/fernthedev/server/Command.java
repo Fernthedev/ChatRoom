@@ -1,6 +1,8 @@
 package com.github.fernthedev.server;
 
-public abstract class ServerCommand {
+import org.jetbrains.annotations.NotNull;
+
+public abstract class Command {
     private String command;
 
     private String usage = "";
@@ -17,9 +19,9 @@ public abstract class ServerCommand {
         this.usage = usage;
     }
 
-    public ServerCommand(String command) {
+    public Command(@NotNull String command) {
         this.command = command;
     }
 
-    abstract void onCommand(String[] args);
+    abstract void onCommand(CommandSender sender,String[] args);
 }

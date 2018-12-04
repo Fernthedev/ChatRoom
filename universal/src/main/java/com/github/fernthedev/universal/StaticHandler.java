@@ -6,7 +6,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.json.simple.JSONObject;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Objects;
@@ -20,22 +19,21 @@ public class StaticHandler {
 
     private static Gson gson = new Gson();
 
-    private static final String version;
+    public static boolean isDebug = false;
+
+    private static String version = null;
 
     public static String getVersion() {
         return version;
     }
 
-    static  {
-        //System.out.println(getFile("variables.json"));
+
+    static {
         TranslateData translateData = gson.fromJson(getFile("variables.json"),TranslateData.class);
 
         version = translateData.getVersion();
         Logger.getLogger("io.netty").setLevel(Level.OFF);
-
     }
-
-
 
     private class TranslateData {
         private String version;
@@ -47,11 +45,20 @@ public class StaticHandler {
 
     private static String getFile(String fileName) {
 
-        StringBuilder result = new StringBuilder("");
+        StringBuilder result = new StringBuilder();
 
         //Get file from resources folder
         ClassLoader classLoader = StaticHandler.class.getClassLoader();
-        File file = new File(Objects.requireNonNull(classLoader.getResource(fileName)).getFile());
+
+        try (Scanner scanner = new Scanner(Objects.requireNonNull(classLoader.getResourceAsStream(fileName)))) {
+            while(scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                result.append(line).append("\n");
+            }
+        }
+
+        /*File file = new File(classLoader.getResourceAsStream(fileName))
+       // File file = new File(Objects.requireNonNull(classLoader.getResource(fileName)).getFile());
 
         try (Scanner scanner = new Scanner(file)) {
 
@@ -62,7 +69,7 @@ public class StaticHandler {
 
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
 
         return result.toString();
 

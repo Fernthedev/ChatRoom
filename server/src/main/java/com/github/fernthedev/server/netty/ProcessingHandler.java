@@ -53,8 +53,6 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter {
             eventListener.recieved(packetLos);
         }
 
-        Server.getLogger().info(ctx.channel());
-
         eventListener.recieved(requestData);
 
         ctx.flush();

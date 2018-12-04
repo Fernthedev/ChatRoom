@@ -1,6 +1,12 @@
 package com.github.fernthedev.server;
 
+import com.github.fernthedev.universal.StaticHandler;
+import org.apache.log4j.Level;
+
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -8,14 +14,44 @@ public class Main {
     static Scanner scanner;
 
     public static void main(String[] args) {
-            scanner = new Scanner(System.in);
+        //new StaticHandler();
+        scanner = new Scanner(System.in);
 
-        if(System.console() == null) {
+        int port = -1;
+
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i];
+
+            if (arg.equalsIgnoreCase("-port")) {
+                try {
+                    port = Integer.parseInt(args[i + 1]);
+                } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
+                    port = -1;
+                }
+            }
+
+            if (arg.equalsIgnoreCase("-debug")) {
+                StaticHandler.isDebug = true;
+            }
+        }
+
+        if(StaticHandler.isDebug) Server.getLogger().setLevel(Level.DEBUG);
+        else Server.getLogger().setLevel(Level.INFO);
+
+        if (port == -1) port = 2000;
+
+        if(System.console() == null && !StaticHandler.isDebug) {
 
             String filename = Main.class.getProtectionDomain().getCodeSource().getLocation().toString().substring(6);
             Server.getLogger().info("No console found");
+
+            String[] newArgs = new String[]{"cmd","/c","start","cmd","/c","java -jar -Xmx2G -Xms2G \"" + filename + "\""};
+
+            List<String> launchArgs = new ArrayList<>(Arrays.asList(newArgs));
+            launchArgs.addAll(Arrays.asList(args));
+
             try {
-                Runtime.getRuntime().exec(new String[]{"cmd","/c","start","cmd","/c","java -jar -Xmx2G -Xms2G \"" + filename + "\""});
+                Runtime.getRuntime().exec(launchArgs.toArray(new String[]{}));
                 System.exit(0);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -23,36 +59,20 @@ public class Main {
 
         }
 
-            int port = -1;
-
-            for (int i = 0; i < args.length; i++) {
-                String arg = args[i];
-
-                if (arg.equalsIgnoreCase("-port")) {
-                    try {
-                        port = Integer.parseInt(args[i + 1]);
-                    } catch (NumberFormatException | ArrayIndexOutOfBoundsException e) {
-                        port = -1;
-                    }
-                }
-            }
-
-            if (port == -1) port = 2000;
-
-            Server server = new Server(port);
-            new Thread(server).start();
+        Server server = new Server(port);
+        new Thread(server).start();
     }
 
     public static String readLine(String message) {
         Server.getLogger().info(message + "\n>");
-        if(scanner.hasNextLine())
+        if (scanner.hasNextLine())
             return scanner.nextLine();
         else return null;
     }
 
     public static int readInt(String message) {
         Server.getLogger().info(message + "\n>");
-        if(scanner.hasNextLine())
+        if (scanner.hasNextLine())
             return scanner.nextInt();
         else return -1;
     }

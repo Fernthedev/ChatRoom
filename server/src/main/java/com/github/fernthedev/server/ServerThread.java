@@ -1,6 +1,5 @@
 package com.github.fernthedev.server;
 
-import com.github.fernthedev.packets.LostServerConnectionPacket;
 import com.github.fernthedev.packets.Packet;
 import com.github.fernthedev.packets.PingPacket;
 import com.github.fernthedev.packets.SafeDisconnect;
@@ -8,16 +7,13 @@ import io.netty.channel.Channel;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 
 public class ServerThread implements Runnable {
 
 
-    private boolean running = false;
+    private boolean running;
 
-    private boolean isConnected = false;
+    private boolean isConnected;
 
     static List<ClientPlayer> socketList = new ArrayList<ClientPlayer>();
 
@@ -69,18 +65,12 @@ public class ServerThread implements Runnable {
             running = false;
             //DISCONNECT FROM SERVER
             if (channel != null) {
-
                 if ((!channel.isActive())) {
                     channel.closeFuture().sync();
                 }
-
-
-                socketList.remove(clientPlayer);
-                Server.clientNetPlayerList.remove(clientPlayer);
-
-
             }
-
+            socketList.remove(clientPlayer);
+            Server.clientNetPlayerList.remove(clientPlayer);
             isConnected = false;
 
 
@@ -128,37 +118,44 @@ public class ServerThread implements Runnable {
         return thread;
     }
 
-    int secondsPassed;
+    private int secondsPassed;
 
     public void run() {
-        if(!running) {
-            Server.sendObjectToAllPlayers(new LostServerConnectionPacket());
-            close(false);
-
-        }
-        //Server.getLogger().info("Checking for " + clientPlayer + " socket " + channel);
 
 
-        long time = System.nanoTime();
+       // long time = System.nanoTime();
 
         // And From your main() method or any other method
-        Timer timer = new Timer();
+        /*Timer timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
+                if(!running) {
+                    timer.purge();
+                    timer.cancel();
+                }
                 secondsPassed++;
+                System.out.println("Second passed " + running);
             }
-        }, 20, 1000);
+        }, (long) 2*1000, (long) 2*1000);*/
 
 
         while (running) {
-
+            secondsPassed++;
+            //System.out.println("Checking " + secondsPassed);
             if(secondsPassed >= 5) {
+                //Server.getLogger().info("Sending packet");
                 sendObject(new PingPacket());
                 secondsPassed = 0;
-                long nowtime = (System.nanoTime() - time);
-                time = System.nanoTime();
-                Server.getLogger().info("Took " + TimeUnit.NANOSECONDS.toMillis(nowtime) + " ms");
+                //long nowtime = (System.nanoTime() - time);
+                //time = System.nanoTime();
+                //Server.getLogger().info("Took " + TimeUnit.NANOSECONDS.toMillis(nowtime) + " ms");
+            }
+
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }

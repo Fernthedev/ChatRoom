@@ -1,5 +1,6 @@
 package com.github.fernthedev.client;
 
+import com.github.fernthedev.packets.CommandPacket;
 import com.github.fernthedev.packets.SendMessagePacket;
 
 import java.util.Scanner;
@@ -28,12 +29,15 @@ public class waitForCommand implements Runnable {
 
                     //if (scanner.hasNextLine()) {
                     if (!checked) {
-                        client.getLogger().info("Type Command:\n>");
+                        Client.getLogger().info("Type Command:");
                         checked = true;
                     }
                 String sendmessage = scanner.nextLine();
-                //client.getLogger().info("the message" + sendmessage);
-                client.getClientThread().sendObject(new SendMessagePacket(client.player, sendmessage));
+
+                    if(sendmessage.startsWith("/")) {
+                        client.getClientThread().sendObject(new CommandPacket(sendmessage.substring(1)));
+                    }else
+                client.getClientThread().sendObject(new SendMessagePacket(sendmessage));
                 // }
          //   }
         }

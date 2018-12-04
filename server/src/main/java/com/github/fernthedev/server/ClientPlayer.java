@@ -1,5 +1,6 @@
 package com.github.fernthedev.server;
 
+import com.github.fernthedev.packets.MessagePacket;
 import com.github.fernthedev.packets.Packet;
 import com.github.fernthedev.packets.SafeDisconnect;
 import com.github.fernthedev.universal.NetPlayer;
@@ -8,7 +9,7 @@ import io.netty.channel.Channel;
 import static com.github.fernthedev.server.Server.clientNetPlayerList;
 import static com.github.fernthedev.server.Server.socketList;
 
-public class ClientPlayer {
+public class ClientPlayer implements CommandSender{
       //   Socket socket;
          String nickname;
 
@@ -70,27 +71,26 @@ public class ClientPlayer {
 
     public void close() {
         //DISCONNECT FROM SERVER
+        Server.getLogger().info("Closing player " + this.toString());
+
         if(channel != null) {
-            Server.getLogger().info("Closing player " + this.toString());
+            channel.close();
+
             if(channel.isOpen()) {
                 sendObject(new SafeDisconnect());
                 channel.closeFuture();
             }
-
             socketList.remove(channel);
-            PlayerHandler.players.remove(netPlayer.id);
             Server.channelServerHashMap.remove(channel);
-            clientNetPlayerList.remove(this);
         }
+
+        PlayerHandler.players.remove(netPlayer.id);
+        clientNetPlayerList.remove(this);
 
         connected = false;
-        try {
-            Thread threadThing = thread.shutdown();
+        Thread threadThing = thread.shutdown();
 
-            if(threadThing != Thread.currentThread()) threadThing.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        Server.closeThread(threadThing);
 
         //serverSocket.close();
     }
@@ -118,4 +118,14 @@ public class ClientPlayer {
 
             return channel.remoteAddress().toString();
         }
+
+    @Override
+    public void sendPacket(Packet packet) {
+        sendObject(packet);
+    }
+
+    @Override
+    public void sendMessage(String message) {
+        sendPacket(new MessagePacket(message));
+    }
 }

@@ -1,8 +1,6 @@
 package com.github.fernthedev.packets;
 
 
-import com.github.fernthedev.universal.NetPlayer;
-
 import java.io.Serializable;
 
 public class SendMessagePacket extends Packet implements Serializable {
@@ -11,10 +9,8 @@ public class SendMessagePacket extends Packet implements Serializable {
     //public CNetPlayer sender;
 
     public String message;
-    public NetPlayer sender;
 
-    public SendMessagePacket(NetPlayer sender,String message) {
+    public SendMessagePacket(String message) {
         this.message = message;
-        this.sender = sender;
     }
 }

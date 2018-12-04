@@ -82,7 +82,9 @@ public class EventListener {
 
             long time = (System.nanoTime() - packet.getTime() );
 
-            Client.getLogger().info("Ping: " + TimeUnit.MILLISECONDS.convert(time,TimeUnit.NANOSECONDS) + " ms");
+
+            Client.getLogger().debug("Ping: " + TimeUnit.MILLISECONDS.convert(time,TimeUnit.NANOSECONDS) + " ms");
+
             client.getClientThread().sendObject(new PongPacket());
         } else if(p instanceof RequestNamePacket) {
 
@@ -99,7 +101,7 @@ public class EventListener {
 
         } else if (p instanceof MessagePacket) {
             MessagePacket messagePacket = (MessagePacket) p;
-            Client.getLogger().info("Received message: " + messagePacket.getMessage());
+            Client.getLogger().info(messagePacket.getMessage());
         }
     }
 

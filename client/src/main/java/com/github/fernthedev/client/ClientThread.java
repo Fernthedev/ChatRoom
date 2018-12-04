@@ -1,10 +1,12 @@
 package com.github.fernthedev.client;
 
 import com.github.fernthedev.client.netty.ClientHandler;
+import com.github.fernthedev.exceptions.DebugException;
 import com.github.fernthedev.packets.Packet;
 import com.github.fernthedev.packets.PlayerLeave;
 import com.github.fernthedev.packets.RemovePlayerPacket;
 import com.github.fernthedev.universal.NetPlayer;
+import com.github.fernthedev.universal.StaticHandler;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -13,6 +15,9 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ClientThread implements Runnable {
     NetPlayer player;
@@ -159,6 +164,13 @@ public class ClientThread implements Runnable {
 
             //DISCONNECT FROM SERVER
             if(channel.isActive()) {
+                if(StaticHandler.isDebug) {
+                    try {
+                        throw new DebugException();
+                    } catch (DebugException e) {
+                        e.printStackTrace();
+                    }
+                }
                 PlayerLeave packet = new PlayerLeave();
 
                 if(connected) {
@@ -173,13 +185,18 @@ public class ClientThread implements Runnable {
                 }
             }
 
-            for(Thread thread : Thread.getAllStackTraces().keySet()) {
-                try {
-                    thread.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+            new Thread(() -> {
+                List<Thread> threads = new ArrayList<>(Thread.getAllStackTraces().keySet());
+                threads.remove(Thread.currentThread());
+                for (Thread thread : threads) {
+                    try {
+                        thread.join();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
+            });
+
             Client.getLogger().info("Closing client!");
             System.exit(0);
         } catch (InterruptedException e) {
@@ -191,7 +208,7 @@ public class ClientThread implements Runnable {
         //client.print(running);
        // client.print("Checking for " + client.host + ":" + client.port + " socket " + channel);
         while (running) {
-            if (System.console() == null) close();
+            if (System.console() == null && !StaticHandler.isDebug) close();
         }
 
     }

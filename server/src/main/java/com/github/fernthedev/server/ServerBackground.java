@@ -7,16 +7,15 @@ import com.github.fernthedev.packets.RecieveMessagePacket;
 import com.github.fernthedev.universal.NetPlayer;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
+
+import static com.github.fernthedev.server.CommandHandler.clientCommandList;
+import static com.github.fernthedev.server.CommandHandler.serverCommandList;
+
 public class ServerBackground implements Runnable {
 
     private Server server;
     private Scanner scanner;
-
-    List<ServerCommand> serverCommandList = new ArrayList<>();
 
 
     public Scanner getScanner() {
@@ -34,50 +33,115 @@ public class ServerBackground implements Runnable {
 
 
     public void run() {
-        addCommand(new ServerCommand("exit") {
+        registerCommands();
+
+        while (server.isRunning()) {
+            boolean scannerChecked = false;
+            //if (scanner.hasNextLine()) {
+            if (!checked) {
+                Server.getLogger().info("Type Command: (try help)");
+                checked = true;
+            }
+            String command = scanner.nextLine();
+
+            String[] checkmessage = command.split(" ", 2);
+            List<String> messageword = new ArrayList<>();
+
+
+            if (checkmessage.length > 1) {
+                String [] messagewordCheck = command.split(" ");
+
+                int index = 0;
+
+                for(String message : messagewordCheck) {
+                    index++;
+                    if(index == 1 || message == null || message.equals("") || message.equals(" ")) continue;
+
+
+                    messageword.add(message);
+                }
+
+
+            }
+
+            command = checkmessage[0];
+
+            boolean executed = false;
+
+            command = command.replaceAll(" {2}"," ");
+
+            if(!command.equals("")) {
+                try {
+                    for (Command serverCommand : serverCommandList) {
+                        if (serverCommand.getCommandName().equalsIgnoreCase(command)) {
+                            String[] args = new String[messageword.size()];
+                            args = messageword.toArray(args);
+
+                            Server.getLogger().info("Executing " + command);
+
+                            new Thread(new CommandHandler(server.getConsole(),serverCommand,args)).start();
+
+                            executed = true;
+                            break;
+                        }
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+
+                if (!executed) {
+                    Server.getLogger().info("No such command found");
+                }
+            }
+        }
+    }
+
+
+    private void registerCommands() {
+        addServerCommand(new Command("exit") {
             @Override
-            void onCommand(String[] args) {
+            void onCommand(CommandSender sender,String[] args) {
                 Server.getLogger().info("Exiting");
                 server.shutdownServer();
                 System.exit(0);
             }
         }).setUsage("Safely closes the server.");
 
-        addCommand(new ServerCommand("broadcast") {
+        addServerCommand(new Command("broadcast") {
             @Override
-            void onCommand(String[] args) {
+            void onCommand(CommandSender sender,String[] args) {
                 if (args.length > 0) {
                     Server.getLogger().info("Telling all clients " + args[0]);
-                    Server.sendObjectToAllPlayers(new RecieveMessagePacket(Server.serverPlayer, args[0]));
+                    Server.sendObjectToAllPlayers(new RecieveMessagePacket(Server.serverPlayer,args[0]));
                 } else {
                     Server.getLogger().info("No message?");
                 }
             }
         }).setUsage("Sends a broadcast message to all clients");
 
-        addCommand(new ServerCommand("ping") {
+        addServerCommand(new Command("ping") {
             @Override
-            void onCommand(String[] args) {
-                Server.sendObjectToAllPlayers(new PingPacket());
+            void onCommand(CommandSender sender,String[] args) {
+               Server.sendObjectToAllPlayers(new PingPacket());
             }
         }).setUsage("Sends a ping packet to all clients");
 
-        addCommand(new ServerCommand("list") {
+        addServerCommand(new Command("list") {
             @Override
-            void onCommand(String[] args) {
+            void onCommand(CommandSender sender,String[] args) {
                 Server.getLogger().info("Players: (" + (PlayerHandler.players.size() - 1) + ")");
 
                 for(ClientPlayer clientPlayer : new HashMap<>(Server.clientNetPlayerList).keySet()) {
                     NetPlayer netPlayer = clientPlayer.getNetPlayer();
-                    Server.getLogger().info(netPlayer.name + " :" + netPlayer.id + " { " + clientPlayer.getAdress() + "}");
+                    Server.getLogger().info(netPlayer.name + " :" + netPlayer.id + " { " + clientPlayer.getAdress() + "} Ping:" + netPlayer.ping + "ms");
                 }
             }
 
         }).setUsage("Lists all players with ip, id and name");
 
-        addCommand(new ServerCommand("kick") {
+        addServerCommand(new Command("kick") {
             @Override
-            void onCommand(String[] args) {
+            void onCommand(CommandSender sender,String[] args) {
                 if(args.length == 0) {
                     Server.getLogger().info("No player to kick?");
                 }else{
@@ -135,9 +199,9 @@ public class ServerBackground implements Runnable {
             }
         }).setUsage("Used to kick players using id");
 
-        addCommand(new ServerCommand("ban") {
+        addServerCommand(new Command("ban") {
             @Override
-            void onCommand(String[] args) {
+            void onCommand(CommandSender sender,String[] args) {
                 if(args.length <= 1) {
                     Server.getLogger().info("No player to kick or type? (ban {type} {player}) \n types: name,ip");
                 }
@@ -195,24 +259,24 @@ public class ServerBackground implements Runnable {
             }
         }).setUsage("Used to ban players using id. ");
 
-        addCommand(new ServerCommand("help") {
+        addServerCommand(new Command("help") {
             @Override
-            void onCommand(String[] args) {
+            void onCommand(CommandSender sender,String[] args) {
                 if(args.length == 0) {
                     Server.getLogger().info("Following commands: ");
-                    for(ServerCommand serverCommand : serverCommandList) {
+                    for(Command serverCommand : serverCommandList) {
                         Server.getLogger().info(serverCommand.getCommandName());
                     }
                 }else{
                     String command = args[0];
                     boolean executed = false;
 
-                    for (ServerCommand serverCommand : serverCommandList) {
+                    for (Command serverCommand : serverCommandList) {
                         if (serverCommand.getCommandName().equalsIgnoreCase(command)) {
                             if(serverCommand.getUsage().equals("")) {
                                 Server.getLogger().info("No usage found.");
                             }else
-                            Server.getLogger().info("Usage: \n" + serverCommand.getUsage());
+                                Server.getLogger().info("Usage: \n" + serverCommand.getUsage());
 
                             executed = true;
                             break;
@@ -221,72 +285,64 @@ public class ServerBackground implements Runnable {
                     if(!executed) Server.getLogger().info("No such command found for help");
                 }
             }
-        }).setUsage("Shows list of commands or usage of a command");;
+        }).setUsage("Shows list of commands or usage of a command");
 
-        while (server.isRunning()) {
-            boolean scannerChecked = false;
-            //if (scanner.hasNextLine()) {
-            if (!checked) {
-                Server.getLogger().info("Type Command: (try help)");
-                checked = true;
+        addClientCommand(new Command("ping") {
+            @Override
+            void onCommand(CommandSender sender,String[] args) {
+                sender.sendPacket(new PingPacket());
             }
-            String command = scanner.nextLine();
+        });
 
-            String[] checkmessage = command.split(" ", 2);
-            List<String> messageword = new ArrayList<>();
+        addClientCommand(new Command("list") {
+            @Override
+            void onCommand(CommandSender sender, String[] args) {
+                sender.sendMessage("Players: (" + (PlayerHandler.players.size() - 1) + ")");
 
+                for(ClientPlayer clientPlayer : new HashMap<>(Server.clientNetPlayerList).keySet()) {
+                    NetPlayer netPlayer = clientPlayer.getNetPlayer();
+                    if(netPlayer == null) continue;
 
-            if (checkmessage.length > 1) {
-                String [] messagewordCheck = command.split(" ");
-
-                int index = 0;
-
-                for(String message : messagewordCheck) {
-                    index++;
-                    if(index == 1 || message == null || message.equals("") || message.equals(" ")) continue;
-
-
-                    messageword.add(message);
+                    sender.sendMessage(netPlayer.name + " :" + netPlayer.id + " Ping:" + netPlayer.ping + "ms");
                 }
-
-
             }
+        });
 
-            command = checkmessage[0];
+        addClientCommand(new Command("help") {
+            @Override
+            void onCommand(CommandSender sender, String[] args) {
+                if(args.length == 0 || args[0].equals("")) {
+                    for(Command serverCommand : clientCommandList) {
+                        sender.sendPacket(new MessagePacket(serverCommand.getCommandName()));
+                    }
+                }else{
+                    String command = args[0];
+                    boolean executed = false;
 
-            boolean executed = false;
-
-            command = command.replaceAll(" {2}"," ");
-
-            if(!command.equals("")) {
-                try {
-                    for (ServerCommand serverCommand : serverCommandList) {
+                    for (Command serverCommand : clientCommandList) {
                         if (serverCommand.getCommandName().equalsIgnoreCase(command)) {
-                            String[] args = new String[messageword.size()];
-                            args = messageword.toArray(args);
-
-                            Server.getLogger().info("Executing " + command);
-
-                            new Thread(new CommandHandler(serverCommand,args)).start();
+                            if(serverCommand.getUsage().equals("")) {
+                                sender.sendMessage("No usage found.");
+                            }else
+                                sender.sendMessage("Usage: \n" + serverCommand.getUsage());
 
                             executed = true;
                             break;
                         }
                     }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                if (!executed) {
-                    Server.getLogger().info("No such command found");
+                    if(!executed) sender.sendMessage("No such command found for help");
                 }
             }
-        }
+        });
     }
 
-
-    private ServerCommand addCommand(@NotNull ServerCommand serverCommand) {
+    private Command addServerCommand(@NotNull Command serverCommand) {
         serverCommandList.add(serverCommand);
         return serverCommand;
+    }
+
+    private Command addClientCommand(@NotNull Command command) {
+        clientCommandList.add(command);
+        return command;
     }
 }

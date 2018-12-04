@@ -8,12 +8,11 @@ public class RecieveMessagePacket extends Packet implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    public String message;
     public NetPlayer sender;
 
-    public String message;
-
-    public RecieveMessagePacket(NetPlayer sender, String message) {
-     this.sender = sender;
-     this.message = message;
+    public RecieveMessagePacket(NetPlayer netPlayer, String message) {
+        this.sender = netPlayer;
+        this.message = message;
     }
 }

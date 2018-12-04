@@ -3,6 +3,8 @@ package com.github.fernthedev.server;
 import com.github.fernthedev.packets.*;
 import com.github.fernthedev.universal.NetPlayer;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 public class EventListener {
 
@@ -22,14 +24,16 @@ public class EventListener {
         if(p instanceof SendMessagePacket) {
             //RecieveMessagePacket packet = (RecieveMessagePacket)p;
             SendMessagePacket sendMessagePacket = (SendMessagePacket)p;
-            if(sendMessagePacket.sender == null) {
+            if(clientPlayer.getNetPlayer() == null) {
                 clientPlayer.sendObject(new requestPlayerClassPacket("Null name. Resend"));
             }else {
-                RecieveMessagePacket recieveMessagePacket = new RecieveMessagePacket(sendMessagePacket.sender, sendMessagePacket.message);
+                RecieveMessagePacket recieveMessagePacket = new RecieveMessagePacket(clientPlayer.getNetPlayer(),sendMessagePacket.message);
 
                 Server.sendObjectToAllPlayers(recieveMessagePacket);
-                Server.getLogger().info(sendMessagePacket.sender.name + ":" + sendMessagePacket.message);
+                Server.getLogger().info(clientPlayer.getNetPlayer().name + ":" + sendMessagePacket.message);
             }
+
+
         } else if(p instanceof PlayerLeave) {
             PlayerLeave packet = (PlayerLeave) p;
             Server.getLogger().info(clientPlayer.getNetPlayer().name + " has left the game");
@@ -99,7 +103,49 @@ public class EventListener {
             PongPacket packet = (PongPacket) p;
             long time = (System.nanoTime() - packet.getTime() );
 
-            Server.getLogger().info("Ping: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+            clientPlayer.getNetPlayer().ping = TimeUnit.NANOSECONDS.toMillis(time);
+
+            //Server.getLogger().info("Ping: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+        }
+
+        else if (p instanceof CommandPacket) {
+            CommandPacket packet = (CommandPacket) p;
+
+            String command = packet.getMessage();
+
+            String[] checkmessage = command.split(" ", 2);
+            List<String> messageword = new ArrayList<>();
+
+
+            if (checkmessage.length > 1) {
+                String [] messagewordCheck = command.split(" ");
+
+                int index = 0;
+
+                for(String message : messagewordCheck) {
+                    index++;
+                    if(index == 1 || message == null || message.equals("") || message.equals(" ")) continue;
+
+
+                    messageword.add(message);
+                }
+            }
+
+            Server.getLogger().debug(packet.getMessage() + " is command");
+
+            for(Command commandCheck : CommandHandler.clientCommandList) {
+
+                Server.getLogger().debug(commandCheck.getCommandName() + " is the command checked");
+                if(commandCheck.getCommandName().equals(packet.getMessage())) {
+                    String[] args = new String[messageword.size()];
+                    args = messageword.toArray(args);
+
+
+
+                    new Thread(new CommandHandler(clientPlayer,commandCheck,args)).start();
+                    break;
+                }
+            }
         }
     }
 

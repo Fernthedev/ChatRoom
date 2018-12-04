@@ -1,13 +1,21 @@
 package com.github.fernthedev.server;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CommandHandler implements Runnable {
 
-    private final ServerCommand serverCommand;
+    private final Command serverCommand;
     private final String[] args;
+    private final CommandSender commandSender;
 
-    public CommandHandler(ServerCommand command, String[] args) {
+    static List<Command> serverCommandList = new ArrayList<>();
+    static List<Command> clientCommandList = new ArrayList<>();
+
+    public CommandHandler(CommandSender commandSender,Command command, String[] args) {
         this.serverCommand = command;
         this.args = args;
+        this.commandSender = commandSender;
     }
 
     /**
@@ -23,6 +31,7 @@ public class CommandHandler implements Runnable {
      */
     @Override
     public void run() {
-        serverCommand.onCommand(args);
+        serverCommand.onCommand(commandSender,args);
+        Server.closeThread(Thread.currentThread());
     }
 }
