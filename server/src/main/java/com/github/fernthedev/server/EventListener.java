@@ -1,9 +1,9 @@
 package com.github.fernthedev.server;
 
+import com.github.fernthedev.packets.*;
 import com.github.fernthedev.universal.NetPlayer;
 
 import java.util.concurrent.TimeUnit;
-import com.github.fernthedev.packets.*;
 public class EventListener {
 
     private Server server;
@@ -17,7 +17,7 @@ public class EventListener {
     
     public void recieved(Object p) {
 
-        System.out.println(clientPlayer + " is the sender of packet");
+       // Server.getLogger().info(clientPlayer + " is the sender of packet");
 
         if(p instanceof SendMessagePacket) {
             //RecieveMessagePacket packet = (RecieveMessagePacket)p;
@@ -28,38 +28,50 @@ public class EventListener {
                 RecieveMessagePacket recieveMessagePacket = new RecieveMessagePacket(sendMessagePacket.sender, sendMessagePacket.message);
 
                 Server.sendObjectToAllPlayers(recieveMessagePacket);
-                System.out.println(sendMessagePacket.sender.name + ":" + sendMessagePacket.message);
+                Server.getLogger().info(sendMessagePacket.sender.name + ":" + sendMessagePacket.message);
             }
         } else if(p instanceof PlayerLeave) {
             PlayerLeave packet = (PlayerLeave) p;
-            System.out.println(clientPlayer.getNetPlayer().name + " has left the game");
+            Server.getLogger().info(clientPlayer.getNetPlayer().name + " has left the game");
 
             PlayerHandler.players.remove(clientPlayer.getNetPlayer().id);
-            clientPlayer.close(false,true);
+            clientPlayer.close();
             Server.sendObjectToAllPlayers(new RemovePlayerPacket(clientPlayer.getNetPlayer()));
 
-        }/*else if(p instanceof RemovePlayerPacket) {
-            RemovePlayerPacket packet = (RemovePlayerPacket) p;
-            System.out.println(com.github.fernthedev.client.PlayerHandler.players.get(packet.id).name + " has left the game");
-            PlayerHandler.players.remove(packet.id);
-
-            Server.sendObjectToAllPlayers(packet);
-        }*/
+        }
         else if(p instanceof TestConnectPacket) {
             TestConnectPacket packet = (TestConnectPacket) p;
-            System.out.println("Connected packet: " + packet.getMessage());
+            Server.getLogger().info("Connected packet: " + packet.getMessage());
         }
 
         else if(p instanceof ConnectedPacket) {
             ConnectedPacket packet = (ConnectedPacket)p;
-            System.out.println("Connected packet recieved from " + clientPlayer.getAdress());
+            //Server.getLogger().info("Connected packet recieved from " + clientPlayer.getAdress());
             int id = 1;
-            System.out.println("Players: " + PlayerHandler.players.size());
+
             if(PlayerHandler.players.size() > 0) {
                 while(id < PlayerHandler.players.size()) {
                     id++;
                 }
             }
+
+            if(!isAlpha(packet.name)) {
+                disconnectIllegalName(packet,"Name requires alphabetical letters only");
+            }
+
+            for(NetPlayer netPlayer : PlayerHandler.players.values()) {
+                if(netPlayer.name.equalsIgnoreCase(packet.name)) {
+                    disconnectIllegalName(packet,"Name already in use");
+                    return;
+                }
+            }
+
+            if(Server.bannedNames.contains(packet.name)) {
+                clientPlayer.sendObject(new MessagePacket("Your name is banned."));
+                clientPlayer.close();
+            }
+
+            Server.getLogger().info("Players: " + PlayerHandler.players.size());
 
             NetPlayer player = new NetPlayer(id,packet.name);
 
@@ -72,9 +84,9 @@ public class EventListener {
             Server.sendObjectToAllPlayers(new AddPlayerPacket(packet.name, player.id));
 
 
-            System.out.println(player.name + " has joined the game");
-            System.out.println("NAME:ID " + player.name + ":" + player.id);
-            System.out.println(PlayerHandler.players.get(player.id).name + " the name." + PlayerHandler.players.get(player.id).id + " the id");
+            Server.getLogger().info(player.name + " has joined the game");
+            Server.getLogger().info("NAME:ID " + player.name + ":" + player.id);
+            Server.getLogger().info(PlayerHandler.players.get(player.id).name + " the name." + PlayerHandler.players.get(player.id).id + " the id");
             
             /*for(int i = 0;i < 5;i++) {
                 server.sendObject(new RecieveMessagePacket(new NetPlayer(0,"Fern"),"THIS IS A MESSAGE"));
@@ -85,10 +97,18 @@ public class EventListener {
             clientPlayer.sendObject(server.lastPacket);
         } else if(p instanceof PongPacket) {
             PongPacket packet = (PongPacket) p;
-            long time = (System.nanoTime() - packet.getTime() ) / 1000000;
+            long time = (System.nanoTime() - packet.getTime() );
 
-            System.out.println("Ping: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
+            Server.getLogger().info("Ping: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
         }
     }
 
+    public boolean isAlpha(String name) {
+        return name.matches("[a-zA-Z]+");
+    }
+
+    private void disconnectIllegalName(ConnectedPacket packet,String message) {
+        clientPlayer.sendObject(new IllegalNamePacket(packet.name,message));
+        clientPlayer.close();
+    }
 }
