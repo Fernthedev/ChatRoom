@@ -2,8 +2,10 @@ package com.github.fernthedev.client;
 
 import com.github.fernthedev.exceptions.LostConnectionServer;
 import com.github.fernthedev.universal.NetPlayer;
+import org.apache.log4j.Logger;
 
 import java.util.Scanner;
+
 
 public class Client {
 
@@ -11,6 +13,9 @@ public class Client {
     public boolean registered;
     private Scanner scanner;
     boolean running = false;
+
+    private static final Logger logger = Logger.getLogger(Client.class);
+
      int port;
      String host;
 
@@ -22,6 +27,12 @@ public class Client {
 
     private ClientThread clientThread;
 
+    /*
+    static {
+        System.setProperty("java.util.logging.SimpleFormatter.format",
+                "[%1$tF %1$tT] [%4$-7s] %5$s %n");
+        logger = Logger.getLogger(Client.class.getName());
+    }*/
 
 
     Client(String host, int port) {
@@ -37,7 +48,7 @@ public class Client {
     }
 
     void initialize() {
-        System.out.println("Initializing");
+        logger.info("Initializing");
         name = null;
         clientThread.connected = false;
         clientThread.connectToServer = true;
@@ -46,7 +57,7 @@ public class Client {
 
 
         if(!registered) {
-            System.out.println("Type in your desired username:");
+            logger.info("Type in your desired username:");
             while (!registered || name == null) {
                     name = Main.readLine("");
 
@@ -78,11 +89,11 @@ public class Client {
         }
     }
 
-    public ClientThread getClientThread() {
-        return clientThread;
+    public static Logger getLogger() {
+        return logger;
     }
 
-    public void print(Object message) {
-        System.out.println(this + " " + message);
+    public ClientThread getClientThread() {
+        return clientThread;
     }
 }

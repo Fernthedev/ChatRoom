@@ -3,11 +3,13 @@ package com.github.fernthedev.client;
 import com.github.fernthedev.universal.NetPlayer;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class PlayerHandler {
 
-    public static HashMap<Integer,NetPlayer> players = new HashMap<Integer, NetPlayer>();
+    public static Map<Integer,NetPlayer> players = new HashMap<>();
 
 
+    private PlayerHandler() {}
 
 }

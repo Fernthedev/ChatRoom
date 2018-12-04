@@ -23,22 +23,22 @@ public class EventListener {
 
                 if (!PlayerHandler.players.containsValue(newPlayer))
                     PlayerHandler.players.put(packet.id, new NetPlayer(packet.id, packet.name));
-                System.out.println(packet.name + " has joined the game");
+                Client.getLogger().info(packet.name + " has joined the game");
             }else{
-                System.out.println("Server has registered client in list");
+                Client.getLogger().info("Server has registered client in list");
             }
         }
 
 
         else if(p instanceof TestConnectPacket) {
             TestConnectPacket packet = (TestConnectPacket) p;
-            System.out.println("Connected packet: " + packet.getMessage());
+            Client.getLogger().info("Connected packet: " + packet.getMessage());
         }
 
         else if(p instanceof RemovePlayerPacket) {
             RemovePlayerPacket packet = (RemovePlayerPacket)p;
             if(PlayerHandler.players.containsValue(new NetPlayer(packet.id,PlayerHandler.players.get(packet.id).name))) {
-                System.out.println(PlayerHandler.players.get(packet.id).name + " has left the game");
+                Client.getLogger().info(PlayerHandler.players.get(packet.id).name + " has left the game");
                 PlayerHandler.players.remove(packet.id);
             }
         }
@@ -46,27 +46,27 @@ public class EventListener {
 
         else if(p instanceof RecieveMessagePacket) {
             RecieveMessagePacket packet = (RecieveMessagePacket)p;
-            System.out.println(packet.sender.name + ":" + packet.message);
+            Client.getLogger().info(packet.sender.name + ":" + packet.message);
             /*if((PlayerHandler.players.containsKey(packet.sender.id)) && (PlayerHandler.players.get(packet.sender.id).name.equals(packet.sender.name))) {
 
             }else {
-                System.out.println("An unknown player sent packet. Player is not in playlist, discarding packet.");
+                Client.getLogger().info("An unknown player sent packet. Player is not in playlist, discarding packet.");
             }*/
 
         }
 
         else if(p instanceof LostServerConnectionPacket) {
             LostServerConnectionPacket packet = (LostServerConnectionPacket)p;
-            System.out.println("Lost connection to server! Must have shutdown!");
+            Client.getLogger().info("Lost connection to server! Must have shutdown!");
             PlayerHandler.players.clear();
             client.getClientThread().disconnect();
         }
 
         else if (p instanceof sendNetPlayerPacket) {
             sendNetPlayerPacket packet = (sendNetPlayerPacket) p;
-            System.out.println("SERVER SENT US THE PLAYER NAME AND ID!");
-            System.out.println("ID:" + packet.player.id);
-            System.out.println("NAME:" + packet.player.name);
+            Client.getLogger().info("SERVER SENT US THE PLAYER NAME AND ID!");
+            Client.getLogger().info("ID:" + packet.player.id);
+            Client.getLogger().info("NAME:" + packet.player.name);
             client.player = packet.player;
         }
 
@@ -77,12 +77,12 @@ public class EventListener {
             requestPlayerClassPacket packet = (requestPlayerClassPacket)p;
             client.getClientThread().sendObject(new ConnectedPacket(client.player.name));
         } else if(p instanceof PingPacket) {
-            //System.out.println("Ponged!");
+            //Client.getLogger().info("Ponged!");
             PingPacket packet = (PingPacket) p;
 
-            long time = (System.nanoTime() - packet.getTime() ) / 1000000;
+            long time = (System.nanoTime() - packet.getTime() );
 
-            System.out.println("Ping: " + TimeUnit.MILLISECONDS.convert(time,TimeUnit.NANOSECONDS) + " ms");
+            Client.getLogger().info("Ping: " + TimeUnit.MILLISECONDS.convert(time,TimeUnit.NANOSECONDS) + " ms");
             client.getClientThread().sendObject(new PongPacket());
         } else if(p instanceof RequestNamePacket) {
 
@@ -90,8 +90,16 @@ public class EventListener {
                 client.registered = true;
 
         } else if(p instanceof SafeDisconnect) {
-            System.out.println("Shutting down due to server disconnect");
+            Client.getLogger().info("Shutting down due to server disconnect");
             client.getClientThread().disconnect();
+        } else if(p instanceof IllegalNamePacket) {
+            IllegalNamePacket illegalNamePacket = (IllegalNamePacket) p;
+            Client.getLogger().info("Illegal name. ("+illegalNamePacket.getName()+") Reason:" + illegalNamePacket.getMessage());
+
+
+        } else if (p instanceof MessagePacket) {
+            MessagePacket messagePacket = (MessagePacket) p;
+            Client.getLogger().info("Received message: " + messagePacket.getMessage());
         }
     }
 

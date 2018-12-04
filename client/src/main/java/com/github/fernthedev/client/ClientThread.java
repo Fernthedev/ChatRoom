@@ -53,7 +53,7 @@ public class ClientThread implements Runnable {
     }
 
     void connect() {
-        System.out.println("Connecting to server.");
+        Client.getLogger().info("Connecting to server.");
 
         workerGroup = new NioEventLoopGroup();
 
@@ -62,6 +62,8 @@ public class ClientThread implements Runnable {
             b.group(workerGroup);
             b.channel(NioSocketChannel.class);
             b.option(ChannelOption.SO_KEEPALIVE, true);
+            b.option(ChannelOption.TCP_NODELAY,true);
+            b.option(ChannelOption.SO_TIMEOUT,5000);
             b.handler(new ChannelInitializer<SocketChannel>() {
 
                 @Override
@@ -87,22 +89,21 @@ public class ClientThread implements Runnable {
 
 
         if (future.isSuccess() && future.channel().isActive()) {
-            System.out.println("SOCKET CONNECTED!");
+            Client.getLogger().info("SOCKET CONNECTED!");
             connected = true;
 
 
             if (!Client.currentThread.isAlive()) {
                 running = true;
                 Client.currentThread.start();
-                System.out.println("This thread started");
             }
 
             if(!waitForCommand.running) {
                 client.running = true;
-                System.out.println("NEW WAIT FOR COMMAND THREAD");
+               // client.getLogger().info("NEW WAIT FOR COMMAND THREAD");
                 Client.waitThread = new Thread(Client.WaitForCommand);
                 Client.waitThread.start();
-                client.print("Command thread started");
+                Client.getLogger().info("Command thread started");
             }
 
             //setReadListener();
@@ -131,24 +132,21 @@ public class ClientThread implements Runnable {
             if (channel.isActive()) {
                 channel.writeAndFlush(packet);
 
-              /*  if(!(packet instanceof PongPacket)) {
-                    System.out.println("Sent an object which is " + packet);
-                }*/
             }
         }else {
-            System.out.println("not packet");
+            Client.getLogger().info("not packet");
         }
     }
 
     void disconnect() {
-        System.out.println("Disconnecting from server");
+        Client.getLogger().info("Disconnecting from server");
         running = false;
         try {
 
             future.channel().closeFuture().sync();
             workerGroup.shutdownGracefully();
 
-            System.out.println("Disconnected");
+            Client.getLogger().info("Disconnected");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -156,7 +154,7 @@ public class ClientThread implements Runnable {
 
     private void close() {
         try {
-            client.print("Closing connection.");
+            Client.getLogger().info("Closing connection.");
             running = false;
 
             //DISCONNECT FROM SERVER
@@ -164,15 +162,14 @@ public class ClientThread implements Runnable {
                 PlayerLeave packet = new PlayerLeave();
 
                 if(connected) {
-                    client.print("Sent disconnect packet.");
+                    Client.getLogger().info("Sent disconnect packet.");
                     sendObject(packet);
                 }
 
                 if(channel.isActive()) {
-                    //in.close();
-                    // out.close();
+
                     channel.closeFuture().sync();
-                    client.print("Closed connection.");
+                    Client.getLogger().info("Closed connection.");
                 }
             }
 
@@ -183,7 +180,7 @@ public class ClientThread implements Runnable {
                     e.printStackTrace();
                 }
             }
-            System.out.println("Closing client!");
+            Client.getLogger().info("Closing client!");
             System.exit(0);
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -192,159 +189,10 @@ public class ClientThread implements Runnable {
 
     public void run() {
         //client.print(running);
-        client.print("Checking for " + client.host + ":" + client.port + " socket " + channel);
+       // client.print("Checking for " + client.host + ":" + client.port + " socket " + channel);
         while (running) {
             if (System.console() == null) close();
-            /*
-            try {
-                //client.print("checking");
-                    if (!isRegistered() && socket.isConnected()) {
-                        sendObject(new ConnectedPacket(client.name));
-                        client.registered = true;
-                    }
-                    if(in.available() != 0) {
-                        client.print(in.available());
-                    }
-
-
-                   // boolean keepCheck = true;
-
-                while (in.available() > 0) {
-
-                   // if(in.read() == -1) {keepCheck = false;}
-
-                    System.out.println("Something in the mailbox");
-                            Object data = in.readObject();
-                            if (data == null) {
-                                sendObject(new NullClass());
-                            } else {
-                                client.print("Recieved");
-                                listener.recieved(data);
-                            }
-                        }
-
-
-
-                //  }
-            } catch (UnknownHostException e) {
-                disconnect();
-            } catch (SocketException e) {
-                e.printStackTrace();
-                close();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            } catch (SocketTimeoutException e) {
-                client.print("LOST CONNECTION TO SERVER! RETRYING!");
-                client.initialize();
-                connected = false;
-                //throwException();
-
-            } catch (ClassCastException e) {
-                e.printStackTrace();
-                sendObject(new NullClass());
-            } catch (EOFException e) {
-                sendObject(new PlayerLeave());
-                e.printStackTrace();
-            } finally {
-                client.print(running);
-                client.print(Thread.getAllStackTraces());
-                client.print(Thread.currentThread());
-                client.print(Client.currentThread);
-                client.print(Thread.currentThread().equals(Client.currentThread));
-            }*/
         }
 
     }
-
-    void setReadListener() {
-        //readListener = new ReadListener(socket,in,out);
-
-        //readingThread = new Thread(readListener);
-        //readingThread.start();
-    }
-
-
-   /* private class ReadListener implements Runnable {
-
-        private Socket socket;
-        private ObjectOutputStream out;
-        private ObjectInputStream in;
-
-        private boolean running = false;
-
-        public ReadListener(Socket socket, ObjectInputStream in, ObjectOutputStream out) {
-            this.socket = socket;
-            this.in = in;
-            this.out = out;
-            running = true;
-        }
-
-        @Override
-        public void run() {
-            try {
-                while (running) {
-                    try {
-                        //client.print("checking");
-                        if (!isRegistered() && socket.isConnected()) {
-                            sendObject(new ConnectedPacket(client.name));
-                            client.registered = true;
-                        }
-
-                        // boolean keepCheck = true;
-
-
-                            // if(in.read() == -1) {keepCheck = false;}
-
-                            //System.out.println("Something in the mailbox");
-                        synchronized (in) {
-                                Object data = in.readObject();
-
-                                if (data == null) {
-                                    synchronized (out) {
-                                        sendObject(new NullClass());
-                                    }
-                                } else {
-                                    if (!(data instanceof PingPacket)) {
-                                        client.print("Recieved");
-                                    }
-                                    listener.recieved(data);
-                                }
-
-                        }
-
-                        //  }
-                    } catch (StreamCorruptedException e) {
-
-                        e.printStackTrace();
-                        //sendObject(new NullClass());
-
-                    }catch (UnknownHostException e) {
-                        disconnect();
-                    } catch (SocketException e) {
-                        e.printStackTrace();
-                        close();
-                    } catch (ClassNotFoundException | EOFException e) {
-                        e.printStackTrace();
-                    } catch (SocketTimeoutException e) {
-                        client.print("LOST CONNECTION TO SERVER! RETRYING!");
-                        client.initialize();
-                        connected = false;
-                        //throwException();
-
-                    } catch (ClassCastException e) {
-                        e.printStackTrace();
-                        sendObject(new NullClass());
-                    } /* finally {
-                    client.print(running);
-                    client.print(Thread.getAllStackTraces());
-                    client.print(Thread.currentThread());
-                    client.print(Client.currentThread);
-                    client.print(Thread.currentThread().equals(Client.currentThread));
-                }
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }*/
 }

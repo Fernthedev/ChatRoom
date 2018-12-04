@@ -13,7 +13,7 @@ public class Main {
         if(System.console() == null) {
 
             String filename = Main.class.getProtectionDomain().getCodeSource().getLocation().toString().substring(6);
-            System.out.println("No console found");
+            Server.getLogger().info("No console found");
             try {
                 Runtime.getRuntime().exec(new String[]{"cmd","/c","start","cmd","/c","java -jar -Xmx2G -Xms2G \"" + filename + "\""});
                 System.exit(0);
@@ -44,14 +44,14 @@ public class Main {
     }
 
     public static String readLine(String message) {
-        System.out.println(message + "\n>");
+        Server.getLogger().info(message + "\n>");
         if(scanner.hasNextLine())
             return scanner.nextLine();
         else return null;
     }
 
     public static int readInt(String message) {
-        System.out.println(message + "\n>");
+        Server.getLogger().info(message + "\n>");
         if(scanner.hasNextLine())
             return scanner.nextInt();
         else return -1;

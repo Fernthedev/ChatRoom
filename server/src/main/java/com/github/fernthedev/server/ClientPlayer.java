@@ -1,8 +1,8 @@
 package com.github.fernthedev.server;
 
-import com.github.fernthedev.universal.NetPlayer;
 import com.github.fernthedev.packets.Packet;
 import com.github.fernthedev.packets.SafeDisconnect;
+import com.github.fernthedev.universal.NetPlayer;
 import io.netty.channel.Channel;
 
 import static com.github.fernthedev.server.Server.clientNetPlayerList;
@@ -16,7 +16,7 @@ public class ClientPlayer {
     //private ObjectOutputStream out;
     //private ObjectInputStream in;
 
-    private FernThread thread;
+    private ServerThread thread;
 
     private boolean connected;
 
@@ -32,7 +32,7 @@ public class ClientPlayer {
         this.netPlayer = netPlayer;
     }
 
-    public void setThread(FernThread thread) {
+    public void setThread(ServerThread thread) {
         this.thread = thread;
     }
 
@@ -60,42 +60,39 @@ public class ClientPlayer {
             channel.writeAndFlush(packet);
             // out.flush();
            /* if(!(packet instanceof PingPacket)) {
-                System.out.println("Sent " + packet);
+                Server.getLogger().info("Sent " + packet);
             }*/
 
         }else {
-            System.out.println("not packet");
+            Server.getLogger().info("not packet");
         }
     }
 
-    public void close(boolean isClosed,boolean sendObject) {
-        try {
-            thread.running = false;
-            System.out.println("Closing player " + this.toString());
-            //DISCONNECT FROM SERVER
-            //RemovePlayerPacket packet = new RemovePlayerPacket();
-            if(channel != null) {
-                if(sendObject && channel.isOpen()) {
-                    sendObject(new SafeDisconnect());
-                }
-
-                if (channel.isOpen()) {
-                    channel.closeFuture();
-
-
-                    socketList.remove(this);
-                    clientNetPlayerList.remove(this);
-                }
+    public void close() {
+        //DISCONNECT FROM SERVER
+        if(channel != null) {
+            Server.getLogger().info("Closing player " + this.toString());
+            if(channel.isOpen()) {
+                sendObject(new SafeDisconnect());
+                channel.closeFuture();
             }
-            //if(!scanner.nextLine().equals(""))
 
-            connected = false;
-            thread.join();
+            socketList.remove(channel);
+            PlayerHandler.players.remove(netPlayer.id);
+            Server.channelServerHashMap.remove(channel);
+            clientNetPlayerList.remove(this);
+        }
 
-            //serverSocket.close();
+        connected = false;
+        try {
+            Thread threadThing = thread.shutdown();
+
+            if(threadThing != Thread.currentThread()) threadThing.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+
+        //serverSocket.close();
     }
 
 
@@ -104,14 +101,17 @@ public class ClientPlayer {
     public String toString() {
 
         if(netPlayer == null) {
-            return "[ClientPlayer] IP: " + getAdress() + " but was incorrectly registered";
+            return "[ClientPlayer] IP: " + getAdress() + " but was not fully registered";
         }
 
         return "[ClientPlayer] IP: " + getAdress() + " name " + netPlayer.name + " id " + netPlayer.id;
     }
 
+    public String getNameAddress() {
+        return "[ClientPlayer] IP: " + getAdress();
+    }
 
-        String getAdress() {
+       String getAdress() {
         if(channel.remoteAddress() == null) {
             return "unknown";
         }

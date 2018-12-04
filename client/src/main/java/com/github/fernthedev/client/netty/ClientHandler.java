@@ -26,8 +26,10 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 
         client.registered = true;
 
+
+
         ChannelFuture future = ctx.writeAndFlush(new ConnectedPacket(client.name));
-        System.out.println("Sent connect packet for request");
+        Client.getLogger().info("Sent connect packet for request");
     }
 
     @Override
@@ -39,7 +41,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
             listener.recieved(packet);
 
             /*if (!(msg instanceof PingPacket))
-                System.out.println("Packet received which is " + msg);*/
+                client.getLogger().info("Packet received which is " + msg);*/
         }
 
         //ctx.close();

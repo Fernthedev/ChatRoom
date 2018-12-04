@@ -1,5 +1,6 @@
 package com.github.fernthedev.server;
 
+import com.github.fernthedev.packets.LostServerConnectionPacket;
 import com.github.fernthedev.packets.Packet;
 import com.github.fernthedev.server.netty.ProcessingHandler;
 import com.github.fernthedev.universal.NetPlayer;
@@ -11,6 +12,8 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
 
 import java.awt.*;
 import java.net.InetAddress;
@@ -19,6 +22,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 
 public class Server extends Canvas implements Runnable {
 
@@ -32,7 +36,7 @@ public class Server extends Canvas implements Runnable {
 
     public static Map<Channel,ClientPlayer> socketList = new HashMap<>();
 
-    static Map<ClientPlayer,NetPlayer> clientNetPlayerList = new HashMap<>();
+    public static Map<ClientPlayer,NetPlayer> clientNetPlayerList = new HashMap<>();
 
     public static Map<Channel,Server> channelServerHashMap = new HashMap<>();
 
@@ -40,7 +44,13 @@ public class Server extends Canvas implements Runnable {
 
     static List<Thread> serverInstanceThreads = new ArrayList<>();
 
+    public static List<String> bannedIps = new ArrayList<>();
+    public static List<String> bannedNames = new ArrayList<>();
+
+
     Object lastPacket;
+
+    private static final Logger logger = Logger.getLogger(Server.class);
 
     private ChannelFuture future;
     private ServerBootstrap bootstrap;
@@ -50,13 +60,18 @@ public class Server extends Canvas implements Runnable {
 
     private ProcessingHandler processingHandler;
 
+    static {
+        Logger.getLogger("io.netty").setLevel(Level.OFF);
+    }
+
     Server(int port) {
         this.port = port;
+        Logger.getLogger("io.netty").setLevel(Level.OFF);
     }
 
 
 
-    private void connect() {
+    private void await() {
 
         while (running) {
             try {
@@ -88,7 +103,7 @@ public class Server extends Canvas implements Runnable {
                 }
                 clientPlayer.setLastPacket(packet);
             } else {
-                System.out.println("not packet");
+                logger.info("not packet");
             }
         }
     }
@@ -97,7 +112,13 @@ public class Server extends Canvas implements Runnable {
     synchronized void shutdownServer() {
         running = false;
         for (ServerThread thread : serverThreads) {
-            thread.close(true);
+            try {
+                Thread threadThing = thread.close(true);
+
+                if(threadThing != Thread.currentThread()) threadThing.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
         workerGroup.shutdownGracefully();
         bossGroup.shutdownGracefully();
@@ -140,11 +161,11 @@ public class Server extends Canvas implements Runnable {
                 }).option(ChannelOption.SO_BACKLOG, 128)
                 .childOption(ChannelOption.SO_KEEPALIVE, true)
                 .childOption(ChannelOption.TCP_NODELAY,true)
-                .childOption(ChannelOption.SO_BROADCAST,true);
+        .childOption(ChannelOption.SO_TIMEOUT,5000);
 
 
         running = true;
-        System.out.println("Server socket registered");
+        logger.info("Server socket registered");
         serverBackground = new ServerBackground(this);
         new Thread(serverBackground).start();
         //Timer pingPongTimer = new Timer("pingpong");
@@ -154,7 +175,8 @@ public class Server extends Canvas implements Runnable {
         serverPlayer = new NetPlayer(0,"Server");
         PlayerHandler.players.put(serverPlayer.id,serverPlayer);
 
-        //connect();
+
+        //await();
         try {
             future = bootstrap.bind(port).sync();
         } catch (InterruptedException e) {
@@ -162,24 +184,41 @@ public class Server extends Canvas implements Runnable {
         }
 
 
+        Runtime.getRuntime().addShutdownHook(new FernThread() {
+            @Override
+            public void run() {
+                for (ServerThread serverThread : Server.serverThreads) {
+                    if (serverThread.clientPlayer.channel.isOpen()) {
+                        Server.getLogger().info("Gracefully shutting down/");
+                        Server.sendObjectToAllPlayers(new LostServerConnectionPacket());
+                        serverThread.clientPlayer.close();
+                    }
+                }
+            }
+        });
+
         try {
-            System.out.println("Server started successfully at localhost (Connect with " + InetAddress.getLocalHost().getHostAddress() + ") using port " + port);
+            logger.info("Server started successfully at localhost (Connect with " + InetAddress.getLocalHost().getHostAddress() + ") using port " + port);
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
 
         if (!future.isSuccess()) {
-            System.out.println("Failed to bind port");
+            logger.info("Failed to bind port");
         }else{
-            System.out.println("Binded port on " + future.channel().localAddress());
+            logger.info("Binded port on " + future.channel().localAddress());
         }
 
-        connect();
+        await();
 
 
         while(running) {
             if (System.console() == null) shutdownServer();
             //Thread.sleep(15);
         }
+    }
+
+    public static Logger getLogger() {
+        return logger;
     }
 }

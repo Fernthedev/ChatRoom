@@ -1,6 +1,5 @@
 package com.github.fernthedev.server.netty;
 
-import com.github.fernthedev.packets.LostServerConnectionPacket;
 import com.github.fernthedev.packets.Packet;
 import com.github.fernthedev.server.*;
 import io.netty.channel.Channel;
@@ -23,6 +22,12 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter {
     public ProcessingHandler(Server server) {this.server = server;}
 
     @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+        ClientPlayer clientPlayer = Server.socketList.get(ctx.channel());
+        clientPlayer.close();
+    }
+
+    @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg)
             throws Exception {
 
@@ -33,14 +38,14 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter {
         boolean found = false;
         for(Channel channel : Server.socketList.keySet()) {
             if(channel == ctx.channel()) {
-                System.out.println("Found the current channel");
+                //Server.getLogger().info("Found the current channel");
                 found = true;
             }
         }
 
-        if(!found) {
-            System.out.println("No channel associated with me?");
-        }
+        /*if(!found) {
+            Server.getLogger().info("No channel associated with me?");
+        }*/
 
         EventListener eventListener = new EventListener(server,Server.socketList.get(ctx.channel()));
 
@@ -48,14 +53,9 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter {
             eventListener.recieved(packetLos);
         }
 
-        System.out.println(ctx.channel());
+        Server.getLogger().info(ctx.channel());
 
         eventListener.recieved(requestData);
-
-        //ChannelFuture future = ctx.writeAndFlush(responseData);
-        //future.addListener(ChannelFutureListener.CLOSE);
-        /*if(!(requestData instanceof PongPacket))
-        System.out.println("Received this packet " + msg);*/
 
         ctx.flush();
     }
@@ -76,8 +76,14 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter {
             }
         }
 
-        System.out.println("Channel Registering");
+       // Server.getLogger().info("Channel Registering");
         Channel channel = ctx.channel();
+
+        if(Server.bannedIps.contains(ctx.channel().remoteAddress().toString())) {
+            ctx.flush();
+            ctx.close();
+            return;
+        }
 
         if (channel != null) {
             Server server = Server.channelServerHashMap.get(ctx.channel());
@@ -87,47 +93,53 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter {
 
             ClientPlayer clientPlayer = new ClientPlayer(channel);
 
-            System.out.println("Created clientPlayer variable " + clientPlayer + " channel " + channel);
+            //Server.getLogger().info("Registering " + clientPlayer.getNameAddress());
+
 
             Server.socketList.put(channel,clientPlayer);
+            Server.clientNetPlayerList.put(clientPlayer,clientPlayer.getNetPlayer());
+
 
 
             EventListener listener = new EventListener(server, clientPlayer);
-            //processingHandler.setListener(listener);
-            System.out.println("Events registered");
 
 
-// And From your main() method or any other method
+            // And From your main() method or any other method
             FernThread runningFernThread;
 
 
             ServerThread serverThread = new ServerThread(server, channel, clientPlayer, listener);
 
             runningFernThread = new FernThread(serverThread);
-            clientPlayer.setThread(runningFernThread);
+            clientPlayer.setThread(serverThread);
 
             runningFernThread.startThread();
+
+            //Server.getLogger().info("Registered threads for " + clientPlayer.getNameAddress());
+
             //serverThread.startListener();
 
-            System.out.println("Thread started for player " + clientPlayer);
+            //Server.getLogger().info("Thread started for player " + clientPlayer);
 
 
             //clientPlayer.sendObject(new RequestNamePacket());
 
+
+            /*
             Runtime.getRuntime().addShutdownHook(new FernThread() {
                 @Override
                 public void run() {
                     for (ServerThread serverThread : Server.serverThreads) {
                         if (serverThread.clientPlayer.channel.isOpen()) {
-                            System.out.println("Gracefully shutting down/");
+                            Server.getLogger().info("Gracefully shutting down/");
                             Server.sendObjectToAllPlayers(new LostServerConnectionPacket());
-                            serverThread.clientPlayer.close(false, false);
+                            serverThread.clientPlayer.close(false);
                         }
                     }
                 }
-            });
+            });*/
         }else{
-            System.out.println("Channel is null");
+            Server.getLogger().info("Channel is null");
             throw new NullPointerException();
         }
     }

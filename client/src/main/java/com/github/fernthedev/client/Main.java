@@ -1,5 +1,8 @@
 package com.github.fernthedev.client;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import java.io.IOException;
 import java.util.Scanner;
 
@@ -14,7 +17,7 @@ public class Main {
         if(System.console() == null) {
 
             String filename = Main.class.getProtectionDomain().getCodeSource().getLocation().toString().substring(6);
-            System.out.println("No console found");
+            Client.getLogger().info("No console found");
             try {
                 Runtime.getRuntime().exec(new String[]{"cmd","/c","start","cmd","/c","java -jar -Xmx2G -Xms2G \"" + filename + "\""});
                 System.exit(0);
@@ -24,6 +27,7 @@ public class Main {
 
         }
 
+        Logger.getLogger("io.netty").setLevel(Level.OFF);
         scanner = new Scanner(System.in);
 
         String host = null;
@@ -63,7 +67,7 @@ public class Main {
 
     public static String readLine(String message) {
         if(!(message == null || message.equals(""))) {
-            System.out.println(message);
+            Client.getLogger().info(message);
         }
         if(scanner.hasNextLine()) {
             return scanner.nextLine();
@@ -73,7 +77,7 @@ public class Main {
 
     public static int readInt(String message) {
         if(!(message == null || message.equals(""))) {
-            System.out.println(message);
+            Client.getLogger().info(message);
         }
         if(scanner.hasNextLine()) {
             return scanner.nextInt();

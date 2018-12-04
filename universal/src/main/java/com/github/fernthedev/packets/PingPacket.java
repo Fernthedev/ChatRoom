@@ -5,7 +5,7 @@ public class PingPacket extends Packet {
     private long time;
 
     public long getTime() {
-        return System.nanoTime() - time;
+        return time;
     }
 
     public PingPacket() {
