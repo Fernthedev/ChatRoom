@@ -1,14 +1,12 @@
 package com.github.fernthedev.client;
 
+import com.github.fernthedev.client.netty.MulticastClient;
 import com.github.fernthedev.universal.StaticHandler;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Scanner;
+import java.util.*;
 
 public class Main {
 
@@ -16,13 +14,17 @@ public class Main {
 
     static Client client;
 
-    public static void main(String[] args) {
-        //new StaticHandler();
+    private MulticastClient multicastClient;
+
+    private String host = null;
+    private int port = -1;
+
+    private Main(String[] args) {
+        new StaticHandler();
         Logger.getLogger("io.netty").setLevel(Level.OFF);
+
         scanner = new Scanner(System.in);
 
-        String host = null;
-        int port = -1;
 
         for(int i = 0;i < args.length;i++) {
             String arg = args[i];
@@ -48,6 +50,10 @@ public class Main {
             }
         }
 
+        multicastClient = new MulticastClient();
+        check(4);
+
+
         if(System.console() == null && !StaticHandler.isDebug) {
 
             String filename = Main.class.getProtectionDomain().getCodeSource().getLocation().toString().substring(6);
@@ -70,9 +76,9 @@ public class Main {
         if(StaticHandler.isDebug) Client.getLogger().setLevel(Level.DEBUG);
         else Client.getLogger().setLevel(Level.INFO);
 
-        while(host == null || port == -1) {
-            if(host == null)
-            host= readLine("Host:");
+        while(host == null || host.equalsIgnoreCase("") || port == -1) {
+            if(host == null || host.equals(""))
+                host= readLine("Host:");
 
             if(port == -1)
                 port = readInt("Port:");
@@ -81,6 +87,77 @@ public class Main {
         client = new Client(host,port);
         Client.getLogger().isDebugEnabled();
         client.initialize();
+    }
+
+
+    private void check(int amount) {
+        multicastClient.checkServers(amount);
+
+        if(!multicastClient.serversAddress.isEmpty()) {
+            Map<Integer,ServerAddress> servers = new HashMap<>();
+            System.out.println("Select one of these servers, or use none to skip, refresh to refresh");
+            int index = 0;
+            for (ServerAddress serverAddress : multicastClient.serversAddress) {
+                index++;
+                servers.put(index,serverAddress);
+                if(serverAddress.getVersion().equals(StaticHandler.getVersion())) {
+                    System.out.println(">" + index + " | " + serverAddress.getAddress() + ":" + serverAddress.getPort());
+                }else{
+                    System.out.println(">" + index + " | " + serverAddress.getAddress() + ":" + serverAddress.getPort() + " (Server's version is " + serverAddress.getVersion() + " while yours is " + StaticHandler.getVersion() + ")");
+                    System.out.println("This server might not work correctly.");
+                }
+            }
+
+            boolean continuecheck = true;
+
+            while(scanner.hasNextLine() && continuecheck) {
+                String answer = scanner.nextLine();
+
+                boolean checked = false;
+
+                answer = answer.replaceAll(" ", "");
+
+                if (answer.equalsIgnoreCase("none")) {
+                    checked = true;
+                    continuecheck = false;
+                    break;
+                }
+
+                if (answer.equalsIgnoreCase("refresh")) {
+                    checked = true;
+                    check(7);
+                }
+
+                if (answer.matches("[0-9]+")) {
+                    checked = true;
+                    try {
+                        int serverIndex = Integer.parseInt(answer);
+
+                        if (servers.containsKey(serverIndex)) {
+                            ServerAddress serverAddress = servers.get(index);
+
+                            host = serverAddress.getAddress();
+                            port = serverAddress.getPort();
+                            System.out.println("Selected " + serverAddress.getAddress() + ":" + serverAddress.getPort());
+                            continuecheck = false;
+                            break;
+                        } else {
+                            System.out.println("Not in the list");
+                        }
+                    } catch (NumberFormatException ignored) {
+                        System.out.println("Not a number or refresh/none");
+                    }
+                }
+
+                if (!checked) {
+                    System.out.println("Unknown argument");
+                }
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        new Main(args);
     }
 
     public static String readLine(String message) {

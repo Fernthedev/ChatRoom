@@ -8,6 +8,11 @@
     <artifactId>netty-test</artifactId>
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <project.buildVer>1.1-RELEASE</project.buildVer>
+    </properties>
+
     <build>
         <plugins>
             <plugin>

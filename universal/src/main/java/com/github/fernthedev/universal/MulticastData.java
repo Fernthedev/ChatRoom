@@ -1,5 +1,6 @@
 package com.github.fernthedev.universal;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class MulticastData {
@@ -9,6 +10,11 @@ public class MulticastData {
     public MulticastData(int port, String verison) {
         this.port = port;
         this.version = verison;
+    }
+
+    public MulticastData(int port, String verison,int clientNumbers) {
+        this(port,verison);
+        this.clientNumbers = clientNumbers;
     }
 
     private String address;
@@ -24,8 +30,8 @@ public class MulticastData {
     private String version;
     private int port;
 
-    private int clientNumbers;
-    private List<String> clients;
+    private int clientNumbers = 0;
+    private List<String> clients =  new ArrayList<>();
 
     public String getVersion() {
         return version;

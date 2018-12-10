@@ -46,4 +46,10 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 
         //ctx.close();
     }
+
+    @Override
+    public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+        System.out.println("Lost connection to server.");
+        client.getClientThread().close();
+    }
 }

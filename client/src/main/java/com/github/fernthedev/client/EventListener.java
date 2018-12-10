@@ -81,9 +81,11 @@ public class EventListener {
             PingPacket packet = (PingPacket) p;
 
             long time = (System.nanoTime() - packet.getTime() );
-
+            if(time < 0) time = 0;
 
             Client.getLogger().debug("Ping: " + TimeUnit.MILLISECONDS.convert(time,TimeUnit.NANOSECONDS) + " ms");
+
+
 
             client.getClientThread().sendObject(new PongPacket());
         } else if(p instanceof RequestNamePacket) {

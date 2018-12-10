@@ -2,6 +2,7 @@ package com.github.fernthedev.server;
 
 import com.github.fernthedev.packets.LostServerConnectionPacket;
 import com.github.fernthedev.packets.Packet;
+import com.github.fernthedev.server.netty.MulticastServer;
 import com.github.fernthedev.server.netty.ProcessingHandler;
 import com.github.fernthedev.universal.NetPlayer;
 import com.github.fernthedev.universal.StaticHandler;
@@ -16,6 +17,7 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import org.apache.log4j.Logger;
 
 import java.awt.*;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -77,27 +79,26 @@ public class Server extends Canvas implements Runnable {
 
 
     private void await() {
+        Server server = this;
+        new Thread(() -> {
+            while (running) {
+                try {
+                    future = future.await().sync();
 
-        while (running) {
-            try {
-                future = future.await().sync();
-
-                future.channel().closeFuture().sync();
+                    future.channel().closeFuture().sync();
 
 
-                if(future.channel().isActive() && future.channel().isRegistered()) {
-                    channelServerHashMap.put(future.channel(),this);
+                    if (future.channel().isActive() && future.channel().isRegistered()) {
+                        channelServerHashMap.put(future.channel(), server);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
-
-
-        }
-
+        });
     }
 
-    public synchronized static void sendObjectToAllPlayers(Object packet) {
+    static synchronized void sendObjectToAllPlayers(Object packet) {
         for(Channel channel : socketList.keySet()) {
 
             ClientPlayer clientPlayer = socketList.get(channel);
@@ -215,13 +216,20 @@ public class Server extends Canvas implements Runnable {
             logger.info("Binded port on " + future.channel().localAddress());
         }
 
-        await();
-
-
-        while(running) {
-            if (System.console() == null && !StaticHandler.isDebug) shutdownServer();
-            //Thread.sleep(15);
+        try {
+            new MulticastServer("Multicast",this).start();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
+
+        await();
+        while(running) {
+            tick();
+        }
+    }
+
+    private void tick() {
+        if (System.console() == null && !StaticHandler.isDebug) shutdownServer();
     }
 
     public static synchronized void closeThread(Thread thread) {
@@ -240,6 +248,10 @@ public class Server extends Canvas implements Runnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    public int getPort() {
+        return port;
     }
 
     public static Logger getLogger() {

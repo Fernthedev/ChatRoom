@@ -74,12 +74,14 @@ public class ClientPlayer implements CommandSender{
         Server.getLogger().info("Closing player " + this.toString());
 
         if(channel != null) {
-            channel.close();
-
             if(channel.isOpen()) {
                 sendObject(new SafeDisconnect());
                 channel.closeFuture();
             }
+
+            channel.close();
+
+
             socketList.remove(channel);
             Server.channelServerHashMap.remove(channel);
         }

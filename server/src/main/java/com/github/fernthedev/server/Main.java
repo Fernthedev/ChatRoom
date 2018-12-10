@@ -14,7 +14,7 @@ public class Main {
     static Scanner scanner;
 
     public static void main(String[] args) {
-        //new StaticHandler();
+        new StaticHandler();
         scanner = new Scanner(System.in);
 
         int port = -1;

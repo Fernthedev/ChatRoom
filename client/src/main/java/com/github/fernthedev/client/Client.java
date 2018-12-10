@@ -14,6 +14,8 @@ public class Client {
     private Scanner scanner;
     boolean running = false;
 
+
+
     private static final Logger logger = Logger.getLogger(Client.class);
 
      int port;
@@ -45,6 +47,7 @@ public class Client {
         clientThread = new ClientThread(this);
 
         currentThread = new Thread(clientThread);
+
     }
 
     void initialize() {

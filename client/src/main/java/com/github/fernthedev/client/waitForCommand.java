@@ -23,23 +23,26 @@ public class waitForCommand implements Runnable {
 
     public void run() {
         running = true;
-       // client.getLogger().info("Starting the runnable for wait for command ;) " + client.running );
+        // client.getLogger().info("Starting the runnable for wait for command ;) " + client.running );
         while (client.running) {
-          //  if (client.registered) {
+            //  if (client.registered) {
 
-                    //if (scanner.hasNextLine()) {
-                    if (!checked) {
-                        Client.getLogger().info("Type Command:");
-                        checked = true;
-                    }
-                String sendmessage = scanner.nextLine();
+            //if (scanner.hasNextLine()) {
+            if (!checked) {
+                Client.getLogger().info("Type Command:");
+                checked = true;
+            }
+            String sendmessage = scanner.nextLine();
+            sendmessage = sendmessage.replaceAll(" {2}", " ");
+            if (!sendmessage.equals("") && !sendmessage.equals(" ")) {
 
-                    if(sendmessage.startsWith("/")) {
-                        client.getClientThread().sendObject(new CommandPacket(sendmessage.substring(1)));
-                    }else
-                client.getClientThread().sendObject(new SendMessagePacket(sendmessage));
-                // }
-         //   }
+                if (sendmessage.startsWith("/")) {
+                    client.getClientThread().sendObject(new CommandPacket(sendmessage.substring(1)));
+                } else
+                    client.getClientThread().sendObject(new SendMessagePacket(sendmessage));
+            }
+            // }
+            //   }
         }
     }
 }

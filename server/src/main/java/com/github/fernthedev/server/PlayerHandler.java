@@ -4,9 +4,9 @@ import com.github.fernthedev.universal.NetPlayer;
 
 import java.util.HashMap;
 
-class PlayerHandler {
+public class PlayerHandler {
 
-    static HashMap<Integer, NetPlayer> players = new HashMap<>();
+    public static HashMap<Integer, NetPlayer> players = new HashMap<>();
 
 
 

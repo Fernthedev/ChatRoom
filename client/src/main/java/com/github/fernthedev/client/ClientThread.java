@@ -143,7 +143,7 @@ public class ClientThread implements Runnable {
         }
     }
 
-    void disconnect() {
+    public void disconnect() {
         Client.getLogger().info("Disconnecting from server");
         running = false;
         try {
@@ -157,7 +157,7 @@ public class ClientThread implements Runnable {
         }
     }
 
-    private void close() {
+    public void close() {
         try {
             Client.getLogger().info("Closing connection.");
             running = false;
@@ -198,6 +198,7 @@ public class ClientThread implements Runnable {
             });
 
             Client.getLogger().info("Closing client!");
+            Main.scanner.close();
             System.exit(0);
         } catch (InterruptedException e) {
             e.printStackTrace();

@@ -60,8 +60,6 @@ public class ServerBackground implements Runnable {
 
                     messageword.add(message);
                 }
-
-
             }
 
             command = checkmessage[0];
@@ -77,7 +75,7 @@ public class ServerBackground implements Runnable {
                             String[] args = new String[messageword.size()];
                             args = messageword.toArray(args);
 
-                            Server.getLogger().info("Executing " + command);
+                           // Server.getLogger().info("Executing " + command);
 
                             new Thread(new CommandHandler(server.getConsole(),serverCommand,args)).start();
 

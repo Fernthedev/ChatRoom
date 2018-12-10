@@ -27,8 +27,7 @@ public class StaticHandler {
         return version;
     }
 
-
-    static {
+    public StaticHandler() {
         TranslateData translateData = gson.fromJson(getFile("variables.json"),TranslateData.class);
 
         version = translateData.getVersion();

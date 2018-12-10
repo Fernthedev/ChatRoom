@@ -86,9 +86,6 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter {
         if (channel != null) {
             Server server = Server.channelServerHashMap.get(ctx.channel());
 
-
-
-
             ClientPlayer clientPlayer = new ClientPlayer(channel);
 
             //Server.getLogger().info("Registering " + clientPlayer.getNameAddress());
@@ -113,29 +110,6 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter {
 
             runningFernThread.startThread();
 
-            //Server.getLogger().info("Registered threads for " + clientPlayer.getNameAddress());
-
-            //serverThread.startListener();
-
-            //Server.getLogger().info("Thread started for player " + clientPlayer);
-
-
-            //clientPlayer.sendObject(new RequestNamePacket());
-
-
-            /*
-            Runtime.getRuntime().addShutdownHook(new FernThread() {
-                @Override
-                public void run() {
-                    for (ServerThread serverThread : Server.serverThreads) {
-                        if (serverThread.clientPlayer.channel.isOpen()) {
-                            Server.getLogger().info("Gracefully shutting down/");
-                            Server.sendObjectToAllPlayers(new LostServerConnectionPacket());
-                            serverThread.clientPlayer.close(false);
-                        }
-                    }
-                }
-            });*/
         }else{
             Server.getLogger().info("Channel is null");
             throw new NullPointerException();

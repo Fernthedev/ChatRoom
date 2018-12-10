@@ -101,7 +101,10 @@ public class EventListener {
             clientPlayer.sendObject(server.lastPacket);
         } else if(p instanceof PongPacket) {
             PongPacket packet = (PongPacket) p;
-            long time = (System.nanoTime() - packet.getTime() );
+            long time = (System.nanoTime() - packet.getTime());
+
+            if(time < 0) time = 0;
+
 
             clientPlayer.getNetPlayer().ping = TimeUnit.NANOSECONDS.toMillis(time);
 
