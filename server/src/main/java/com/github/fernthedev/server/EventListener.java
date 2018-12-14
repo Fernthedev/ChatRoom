@@ -152,7 +152,7 @@ public class EventListener {
                     String[] args = new String[messageword.size()];
                     args = messageword.toArray(args);
 
-                    Server.getLogger().debug(clientPlayer + " /"+ commandCheck.getCommandName());
+                    Server.getLogger().info(clientPlayer + " /"+ commandCheck.getCommandName());
 
                     new Thread(new CommandHandler(clientPlayer,commandCheck,args)).start();
                     break;
