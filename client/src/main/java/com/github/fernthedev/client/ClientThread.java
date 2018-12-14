@@ -44,6 +44,17 @@ public class ClientThread implements Runnable {
 
     private EventLoopGroup workerGroup;
 
+    /**
+     * PingPong delay
+     */
+    public static long startTime;
+    public static long endTime;
+
+    /**
+     * is nanosecond
+     */
+    public static long miliPingDelay;
+
     //private ReadListener readListener;
 
 

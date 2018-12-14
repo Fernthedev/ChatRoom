@@ -50,8 +50,10 @@ public class Main {
             }
         }
 
-        multicastClient = new MulticastClient();
-        check(4);
+        if(host == null || host.equals("") || port == -1) {
+            multicastClient = new MulticastClient();
+            check(4);
+        }
 
 
         if(System.console() == null && !StaticHandler.isDebug) {

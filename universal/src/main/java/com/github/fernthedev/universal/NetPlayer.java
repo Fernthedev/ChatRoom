@@ -10,7 +10,7 @@ public class NetPlayer implements Serializable {
     public int id;
     public String name;
 
-    public long ping;
+   public long ping;
 
 
 
@@ -18,4 +18,6 @@ public class NetPlayer implements Serializable {
         this.id = id;
         this.name = name;
     }
+
+
 }

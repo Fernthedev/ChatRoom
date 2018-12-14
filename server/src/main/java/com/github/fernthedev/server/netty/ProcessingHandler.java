@@ -32,30 +32,18 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter {
             throws Exception {
 
         Packet requestData = (Packet) msg;
-        /*if(eventListener == null) {
-            packetsLost.add(msg);
-        }*/
-        boolean found = false;
-        for(Channel channel : Server.socketList.keySet()) {
-            if(channel == ctx.channel()) {
-                //Server.getLogger().info("Found the current channel");
-                found = true;
+
+        if(Server.socketList.containsKey(ctx.channel())) {
+            EventListener eventListener = new EventListener(server, Server.socketList.get(ctx.channel()));
+
+            for (Object packetLos : packetsLost) {
+                eventListener.recieved(packetLos);
             }
+
+            eventListener.recieved(requestData);
+
+            ctx.flush();
         }
-
-        /*if(!found) {
-            Server.getLogger().info("No channel associated with me?");
-        }*/
-
-        EventListener eventListener = new EventListener(server,Server.socketList.get(ctx.channel()));
-
-        for(Object packetLos : packetsLost){
-            eventListener.recieved(packetLos);
-        }
-
-        eventListener.recieved(requestData);
-
-        ctx.flush();
     }
 
     @Override

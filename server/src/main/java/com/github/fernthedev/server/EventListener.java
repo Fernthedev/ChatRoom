@@ -1,11 +1,13 @@
 package com.github.fernthedev.server;
 
 import com.github.fernthedev.packets.*;
+import com.github.fernthedev.packets.latency.PongPacket;
 import com.github.fernthedev.universal.NetPlayer;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
 public class EventListener {
 
     private Server server;
@@ -100,18 +102,15 @@ public class EventListener {
         } else if(p instanceof NullClass) {
             clientPlayer.sendObject(server.lastPacket);
         } else if(p instanceof PongPacket) {
-            PongPacket packet = (PongPacket) p;
-            long time = (System.nanoTime() - packet.getTime());
 
-            if(time < 0) time = 0;
+            clientPlayer.endTime = System.nanoTime();
+
+            clientPlayer.getNetPlayer().ping = TimeUnit.NANOSECONDS.toMillis(clientPlayer.endTime - clientPlayer.startTime);
 
 
-            clientPlayer.getNetPlayer().ping = TimeUnit.NANOSECONDS.toMillis(time);
 
-            //Server.getLogger().info("Ping: " + TimeUnit.NANOSECONDS.toMillis(time) + " ms");
-        }
+        } else if (p instanceof CommandPacket) {
 
-        else if (p instanceof CommandPacket) {
             CommandPacket packet = (CommandPacket) p;
 
             String command = packet.getMessage();
@@ -119,31 +118,41 @@ public class EventListener {
             String[] checkmessage = command.split(" ", 2);
             List<String> messageword = new ArrayList<>();
 
+            String commandName = null;
+
 
             if (checkmessage.length > 1) {
-                String [] messagewordCheck = command.split(" ");
-
                 int index = 0;
 
-                for(String message : messagewordCheck) {
+
+
+                for(String message : checkmessage) {
                     index++;
-                    if(index == 1 || message == null || message.equals("") || message.equals(" ")) continue;
+
+
+
+                    if(index == 1 || message == null || message.equals("") || message.equals(" ")) {
+
+                        if(!(message == null || message.equals("") || message.equals(" "))) {
+                            commandName = message;
+                        }
+
+                        continue;
+                    }
 
 
                     messageword.add(message);
                 }
-            }
+            }else
+                commandName = checkmessage[0];
 
-            Server.getLogger().debug(packet.getMessage() + " is command");
 
             for(Command commandCheck : CommandHandler.clientCommandList) {
-
-                Server.getLogger().debug(commandCheck.getCommandName() + " is the command checked");
-                if(commandCheck.getCommandName().equals(packet.getMessage())) {
+                if(commandCheck.getCommandName().equals(commandName)) {
                     String[] args = new String[messageword.size()];
                     args = messageword.toArray(args);
 
-
+                    Server.getLogger().debug(clientPlayer + " /"+ commandCheck.getCommandName());
 
                     new Thread(new CommandHandler(clientPlayer,commandCheck,args)).start();
                     break;

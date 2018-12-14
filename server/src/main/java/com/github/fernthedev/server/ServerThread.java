@@ -1,7 +1,7 @@
 package com.github.fernthedev.server;
 
 import com.github.fernthedev.packets.Packet;
-import com.github.fernthedev.packets.PingPacket;
+import com.github.fernthedev.packets.latency.PingPacket;
 import com.github.fernthedev.packets.SafeDisconnect;
 import io.netty.channel.Channel;
 
@@ -145,7 +145,7 @@ public class ServerThread implements Runnable {
             //System.out.println("Checking " + secondsPassed);
             if(secondsPassed >= 5) {
                 //Server.getLogger().info("Sending packet");
-                sendObject(new PingPacket());
+                clientPlayer.ping();
                 secondsPassed = 0;
                 //long nowtime = (System.nanoTime() - time);
                 //time = System.nanoTime();

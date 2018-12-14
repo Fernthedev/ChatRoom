@@ -228,6 +228,7 @@ public class Server extends Canvas implements Runnable {
         }
     }
 
+
     private void tick() {
         if (System.console() == null && !StaticHandler.isDebug) shutdownServer();
     }

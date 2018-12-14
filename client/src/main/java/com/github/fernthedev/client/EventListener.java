@@ -1,7 +1,10 @@
 package com.github.fernthedev.client;
 
-import com.github.fernthedev.universal.NetPlayer;
 import com.github.fernthedev.packets.*;
+import com.github.fernthedev.packets.latency.PingPacket;
+import com.github.fernthedev.packets.latency.PingReceive;
+import com.github.fernthedev.packets.latency.PongPacket;
+import com.github.fernthedev.universal.NetPlayer;
 
 import java.util.concurrent.TimeUnit;
 
@@ -77,17 +80,17 @@ public class EventListener {
             requestPlayerClassPacket packet = (requestPlayerClassPacket)p;
             client.getClientThread().sendObject(new ConnectedPacket(client.player.name));
         } else if(p instanceof PingPacket) {
-            //Client.getLogger().info("Ponged!");
-            PingPacket packet = (PingPacket) p;
-
-            long time = (System.nanoTime() - packet.getTime() );
-            if(time < 0) time = 0;
-
-            Client.getLogger().debug("Ping: " + TimeUnit.MILLISECONDS.convert(time,TimeUnit.NANOSECONDS) + " ms");
-
-
+            ClientThread.startTime = System.nanoTime();
 
             client.getClientThread().sendObject(new PongPacket());
+        } else if(p instanceof PingReceive) {
+
+            ClientThread.endTime = System.nanoTime();
+
+            ClientThread.miliPingDelay = ClientThread.endTime - ClientThread.startTime;
+
+            Client.getLogger().debug("Ping: " + TimeUnit.NANOSECONDS.toMillis(ClientThread.miliPingDelay) + "ms");
+
         } else if(p instanceof RequestNamePacket) {
 
                 client.getClientThread().sendObject(new ConnectedPacket(client.name));

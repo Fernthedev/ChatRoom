@@ -1,8 +1,8 @@
 package com.github.fernthedev.server;
 
 
+import com.github.fernthedev.exceptions.DebugException;
 import com.github.fernthedev.packets.MessagePacket;
-import com.github.fernthedev.packets.PingPacket;
 import com.github.fernthedev.packets.RecieveMessagePacket;
 import com.github.fernthedev.universal.NetPlayer;
 import org.jetbrains.annotations.NotNull;
@@ -53,9 +53,17 @@ public class ServerBackground implements Runnable {
 
                 int index = 0;
 
+
+
                 for(String message : messagewordCheck) {
+                    if(message == null) continue;
+
+                    message = message.replaceAll(" {2}"," ");
+
                     index++;
-                    if(index == 1 || message == null || message.equals("") || message.equals(" ")) continue;
+                    if(index == 1 || message.equals("")) continue;
+
+
 
 
                     messageword.add(message);
@@ -84,7 +92,7 @@ public class ServerBackground implements Runnable {
                         }
                     }
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    Server.getLogger().error(e.getMessage(),e.getCause());
                 }
 
                 if (!executed) {
@@ -109,8 +117,25 @@ public class ServerBackground implements Runnable {
             @Override
             void onCommand(CommandSender sender,String[] args) {
                 if (args.length > 0) {
-                    Server.getLogger().info("Telling all clients " + args[0]);
-                    Server.sendObjectToAllPlayers(new RecieveMessagePacket(Server.serverPlayer,args[0]));
+                    StringBuilder argString = new StringBuilder();
+
+                    int index = 0;
+
+                    for(String arg : args) {
+                        index++;
+
+                        if(index == 1) {
+                            argString.append(arg);
+                        }else {
+                            argString.append(" ");
+                            argString.append(arg);
+                        }
+                    }
+
+                    String message = argString.toString();
+
+                    Server.getLogger().info(Server.serverPlayer.name + ":" + message);
+                    Server.sendObjectToAllPlayers(new RecieveMessagePacket(Server.serverPlayer,message));
                 } else {
                     Server.getLogger().info("No message?");
                 }
@@ -120,7 +145,7 @@ public class ServerBackground implements Runnable {
         addServerCommand(new Command("ping") {
             @Override
             void onCommand(CommandSender sender,String[] args) {
-               Server.sendObjectToAllPlayers(new PingPacket());
+               ClientPlayer.pingAll();
             }
         }).setUsage("Sends a ping packet to all clients");
 
@@ -288,7 +313,15 @@ public class ServerBackground implements Runnable {
         addClientCommand(new Command("ping") {
             @Override
             void onCommand(CommandSender sender,String[] args) {
-                sender.sendPacket(new PingPacket());
+                try {
+                    throw new DebugException();
+                } catch (DebugException e) {
+                    Server.getLogger().error(e.getMessage(),e.getCause());
+                }
+                if(sender instanceof ClientPlayer) {
+                    ClientPlayer clientPlayer = (ClientPlayer) sender;
+                    clientPlayer.ping();
+                }
             }
         });
 

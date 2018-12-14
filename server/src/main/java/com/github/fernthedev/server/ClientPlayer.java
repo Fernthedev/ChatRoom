@@ -3,15 +3,16 @@ package com.github.fernthedev.server;
 import com.github.fernthedev.packets.MessagePacket;
 import com.github.fernthedev.packets.Packet;
 import com.github.fernthedev.packets.SafeDisconnect;
+import com.github.fernthedev.packets.latency.PingPacket;
 import com.github.fernthedev.universal.NetPlayer;
 import io.netty.channel.Channel;
 
 import static com.github.fernthedev.server.Server.clientNetPlayerList;
 import static com.github.fernthedev.server.Server.socketList;
 
-public class ClientPlayer implements CommandSender{
-      //   Socket socket;
-         String nickname;
+public class ClientPlayer implements CommandSender {
+    //   Socket socket;
+    String nickname;
 
 
     //private ObjectOutputStream out;
@@ -42,18 +43,25 @@ public class ClientPlayer implements CommandSender{
     }
 
     public ClientPlayer(Channel channel) {
-            this.channel = channel;
+        this.channel = channel;
     }
 
 
-        String getNickname() {
-            return nickname;
-        }
+    /**
+     * PingPong delay
+     */
+    public long startTime;
+    public long endTime;
 
-        void setLastPacket(Object packet) {
-            if(packet instanceof Packet) {
-            }
+
+    String getNickname() {
+        return nickname;
+    }
+
+    void setLastPacket(Object packet) {
+        if (packet instanceof Packet) {
         }
+    }
 
     public void sendObject(Object packet) {
         if (packet instanceof Packet) {
@@ -64,7 +72,7 @@ public class ClientPlayer implements CommandSender{
                 Server.getLogger().info("Sent " + packet);
             }*/
 
-        }else {
+        } else {
             Server.getLogger().info("not packet");
         }
     }
@@ -73,8 +81,8 @@ public class ClientPlayer implements CommandSender{
         //DISCONNECT FROM SERVER
         Server.getLogger().info("Closing player " + this.toString());
 
-        if(channel != null) {
-            if(channel.isOpen()) {
+        if (channel != null) {
+            if (channel.isOpen()) {
                 sendObject(new SafeDisconnect());
                 channel.closeFuture();
             }
@@ -98,28 +106,38 @@ public class ClientPlayer implements CommandSender{
     }
 
 
-
     @Override
     public String toString() {
 
-        if(netPlayer == null) {
-            return "[ClientPlayer] IP: " + getAdress() + " but was not fully registered";
+        if (netPlayer == null) {
+            return "[" + getAdress() + "]";
         }
 
-        return "[ClientPlayer] IP: " + getAdress() + " name " + netPlayer.name + " id " + netPlayer.id;
+        return "[" + getAdress() + "] [" + netPlayer.name + "|" + netPlayer.id+"]";
     }
 
     public String getNameAddress() {
         return "[ClientPlayer] IP: " + getAdress();
     }
 
-       String getAdress() {
-        if(channel.remoteAddress() == null) {
+    String getAdress() {
+        if (channel.remoteAddress() == null) {
             return "unknown";
         }
 
-            return channel.remoteAddress().toString();
+        return channel.remoteAddress().toString();
+    }
+
+    public void ping() {
+        startTime = System.nanoTime();
+        sendPacket(new PingPacket());
+    }
+
+    public static void pingAll() {
+        for(ClientPlayer clientPlayer : socketList.values()) {
+            clientPlayer.ping();
         }
+    }
 
     @Override
     public void sendPacket(Packet packet) {
