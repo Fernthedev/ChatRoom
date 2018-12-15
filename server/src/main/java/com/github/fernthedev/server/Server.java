@@ -2,6 +2,7 @@ package com.github.fernthedev.server;
 
 import com.github.fernthedev.packets.LostServerConnectionPacket;
 import com.github.fernthedev.packets.Packet;
+import com.github.fernthedev.packets.message.MessagePacket;
 import com.github.fernthedev.server.netty.MulticastServer;
 import com.github.fernthedev.server.netty.ProcessingHandler;
 import com.github.fernthedev.universal.NetPlayer;
@@ -240,7 +241,7 @@ public class Server extends Canvas implements Runnable {
             try {
                 thread.join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                logger.error(e.getMessage(),e.getCause());
             }
         });
 
@@ -249,6 +250,11 @@ public class Server extends Canvas implements Runnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    public static void sendMessage(String message) {
+        Server.getLogger().info(message);
+        Server.sendObjectToAllPlayers(new MessagePacket(message));
     }
 
     public int getPort() {

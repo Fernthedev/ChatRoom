@@ -4,7 +4,6 @@ import com.github.fernthedev.client.Client;
 import com.github.fernthedev.client.EventListener;
 import com.github.fernthedev.packets.ConnectedPacket;
 import com.github.fernthedev.packets.Packet;
-import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
@@ -28,8 +27,8 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 
 
 
-        ChannelFuture future = ctx.writeAndFlush(new ConnectedPacket(client.name));
-        Client.getLogger().info("Sent connect packet for request");
+        ctx.writeAndFlush(new ConnectedPacket(client.name));
+        Client.getLogger().debug("Sent connect packet for request");
     }
 
     @Override
@@ -49,7 +48,7 @@ public class ClientHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-        System.out.println("Lost connection to server.");
+        Client.getLogger().info("Lost connection to server.");
         client.getClientThread().close();
     }
 }

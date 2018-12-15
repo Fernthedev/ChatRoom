@@ -1,4 +1,6 @@
-package com.github.fernthedev.packets;
+package com.github.fernthedev.packets.player;
+
+import com.github.fernthedev.packets.Packet;
 
 import java.io.Serializable;
 

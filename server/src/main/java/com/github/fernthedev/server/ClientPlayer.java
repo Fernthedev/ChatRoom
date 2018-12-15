@@ -1,8 +1,8 @@
 package com.github.fernthedev.server;
 
-import com.github.fernthedev.packets.MessagePacket;
+import com.github.fernthedev.packets.message.MessagePacket;
 import com.github.fernthedev.packets.Packet;
-import com.github.fernthedev.packets.SafeDisconnect;
+import com.github.fernthedev.packets.player.SafeDisconnect;
 import com.github.fernthedev.packets.latency.PingPacket;
 import com.github.fernthedev.universal.NetPlayer;
 import io.netty.channel.Channel;
@@ -21,6 +21,8 @@ public class ClientPlayer implements CommandSender {
     private ServerThread thread;
 
     private boolean connected;
+
+    public boolean registered = false;
 
     private NetPlayer netPlayer;
 
@@ -94,7 +96,10 @@ public class ClientPlayer implements CommandSender {
             Server.channelServerHashMap.remove(channel);
         }
 
-        PlayerHandler.players.remove(netPlayer.id);
+        if(netPlayer != null) {
+            PlayerHandler.players.remove(netPlayer.id);
+        }
+
         clientNetPlayerList.remove(this);
 
         connected = false;

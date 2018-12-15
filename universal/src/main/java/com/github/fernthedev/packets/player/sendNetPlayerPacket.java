@@ -1,7 +1,8 @@
-package com.github.fernthedev.packets;
+package com.github.fernthedev.packets.player;
 
 
 
+import com.github.fernthedev.packets.Packet;
 import com.github.fernthedev.universal.NetPlayer;
 
 import java.io.Serializable;

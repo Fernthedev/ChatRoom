@@ -2,8 +2,8 @@ package com.github.fernthedev.server;
 
 
 import com.github.fernthedev.exceptions.DebugException;
-import com.github.fernthedev.packets.MessagePacket;
-import com.github.fernthedev.packets.RecieveMessagePacket;
+import com.github.fernthedev.packets.message.MessagePacket;
+import com.github.fernthedev.packets.message.RecieveMessagePacket;
 import com.github.fernthedev.universal.NetPlayer;
 import org.jetbrains.annotations.NotNull;
 

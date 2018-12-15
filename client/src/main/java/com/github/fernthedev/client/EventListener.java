@@ -4,6 +4,9 @@ import com.github.fernthedev.packets.*;
 import com.github.fernthedev.packets.latency.PingPacket;
 import com.github.fernthedev.packets.latency.PingReceive;
 import com.github.fernthedev.packets.latency.PongPacket;
+import com.github.fernthedev.packets.message.MessagePacket;
+import com.github.fernthedev.packets.message.RecieveMessagePacket;
+import com.github.fernthedev.packets.player.*;
 import com.github.fernthedev.universal.NetPlayer;
 
 import java.util.concurrent.TimeUnit;
@@ -28,7 +31,7 @@ public class EventListener {
                     PlayerHandler.players.put(packet.id, new NetPlayer(packet.id, packet.name));
                 Client.getLogger().info(packet.name + " has joined the game");
             }else{
-                Client.getLogger().info("Server has registered client in list");
+                Client.getLogger().debug("Server has registered client in list");
             }
         }
 
@@ -67,9 +70,9 @@ public class EventListener {
 
         else if (p instanceof sendNetPlayerPacket) {
             sendNetPlayerPacket packet = (sendNetPlayerPacket) p;
-            Client.getLogger().info("SERVER SENT US THE PLAYER NAME AND ID!");
-            Client.getLogger().info("ID:" + packet.player.id);
-            Client.getLogger().info("NAME:" + packet.player.name);
+            Client.getLogger().debug("SERVER SENT US THE PLAYER NAME AND ID!");
+            Client.getLogger().debug("ID:" + packet.player.id);
+            Client.getLogger().debug("NAME:" + packet.player.name);
             client.player = packet.player;
         }
 

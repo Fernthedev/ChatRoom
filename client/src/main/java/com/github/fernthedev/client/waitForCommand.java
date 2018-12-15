@@ -1,7 +1,7 @@
 package com.github.fernthedev.client;
 
 import com.github.fernthedev.packets.CommandPacket;
-import com.github.fernthedev.packets.SendMessagePacket;
+import com.github.fernthedev.packets.message.SendMessagePacket;
 
 import java.util.Scanner;
 

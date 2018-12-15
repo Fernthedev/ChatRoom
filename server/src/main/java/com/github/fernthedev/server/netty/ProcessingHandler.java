@@ -24,7 +24,15 @@ public class ProcessingHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
         ClientPlayer clientPlayer = Server.socketList.get(ctx.channel());
-        clientPlayer.close();
+
+        if(PlayerHandler.players.containsValue(clientPlayer.getNetPlayer())) {
+            Server.sendMessage(clientPlayer.getNetPlayer().name + " has left the game");
+
+            PlayerHandler.players.remove(clientPlayer.getNetPlayer().id);
+            clientPlayer.close();
+        }
+
+        //clientPlayer.close();
     }
 
     @Override

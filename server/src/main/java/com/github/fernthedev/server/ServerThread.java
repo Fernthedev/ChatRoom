@@ -2,7 +2,7 @@ package com.github.fernthedev.server;
 
 import com.github.fernthedev.packets.Packet;
 import com.github.fernthedev.packets.latency.PingPacket;
-import com.github.fernthedev.packets.SafeDisconnect;
+import com.github.fernthedev.packets.player.SafeDisconnect;
 import io.netty.channel.Channel;
 
 import java.util.ArrayList;
@@ -121,35 +121,22 @@ public class ServerThread implements Runnable {
     private int secondsPassed;
 
     public void run() {
-
-
-       // long time = System.nanoTime();
-
-        // And From your main() method or any other method
-        /*Timer timer = new Timer();
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                if(!running) {
-                    timer.purge();
-                    timer.cancel();
-                }
-                secondsPassed++;
-                System.out.println("Second passed " + running);
-            }
-        }, (long) 2*1000, (long) 2*1000);*/
-
-
+        int registerTimeout = 0;
         while (running) {
             secondsPassed++;
-            //System.out.println("Checking " + secondsPassed);
+            if(!clientPlayer.registered) {
+                registerTimeout++;
+            }else registerTimeout = 0;
+
+
+            if(registerTimeout > 10) {
+                System.out.println(registerTimeout + " is timeout");
+             clientPlayer.close();
+            }
+
             if(secondsPassed >= 5) {
-                //Server.getLogger().info("Sending packet");
                 clientPlayer.ping();
                 secondsPassed = 0;
-                //long nowtime = (System.nanoTime() - time);
-                //time = System.nanoTime();
-                //Server.getLogger().info("Took " + TimeUnit.NANOSECONDS.toMillis(nowtime) + " ms");
             }
 
             try {

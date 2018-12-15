@@ -3,8 +3,7 @@ package com.github.fernthedev.client;
 import com.github.fernthedev.client.netty.ClientHandler;
 import com.github.fernthedev.exceptions.DebugException;
 import com.github.fernthedev.packets.Packet;
-import com.github.fernthedev.packets.PlayerLeave;
-import com.github.fernthedev.packets.RemovePlayerPacket;
+import com.github.fernthedev.packets.player.RemovePlayerPacket;
 import com.github.fernthedev.universal.NetPlayer;
 import com.github.fernthedev.universal.StaticHandler;
 import io.netty.bootstrap.Bootstrap;
@@ -182,12 +181,6 @@ public class ClientThread implements Runnable {
                         e.printStackTrace();
                     }
                 }
-                PlayerLeave packet = new PlayerLeave();
-
-                if(connected) {
-                    Client.getLogger().info("Sent disconnect packet.");
-                    sendObject(packet);
-                }
 
                 if(channel.isActive()) {
 
@@ -196,7 +189,10 @@ public class ClientThread implements Runnable {
                 }
             }
 
-            new Thread(() -> {
+            Client.getLogger().info("Closing client!");
+            Main.scanner.close();
+
+            Thread threadE = new Thread(() -> {
                 List<Thread> threads = new ArrayList<>(Thread.getAllStackTraces().keySet());
                 threads.remove(Thread.currentThread());
                 for (Thread thread : threads) {
@@ -208,8 +204,8 @@ public class ClientThread implements Runnable {
                 }
             });
 
-            Client.getLogger().info("Closing client!");
-            Main.scanner.close();
+            threadE.join();
+
             System.exit(0);
         } catch (InterruptedException e) {
             e.printStackTrace();

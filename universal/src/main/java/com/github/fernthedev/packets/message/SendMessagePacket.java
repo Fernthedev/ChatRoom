@@ -1,5 +1,7 @@
-package com.github.fernthedev.packets;
+package com.github.fernthedev.packets.message;
 
+
+import com.github.fernthedev.packets.Packet;
 
 import java.io.Serializable;
 
